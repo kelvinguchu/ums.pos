@@ -23,7 +23,7 @@ export function AgentInventorySheet({
 }: AgentInventorySheetProps) {
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent className='min-w-[40vw]'>
+      <SheetContent className='min-w-[40vw] bg-gray-50 border-l border-gray-200 px-2'>
         <SheetHeader>
           <SheetTitle className='text-[#000080] text-center'>
             Agent Inventory - {agentName}

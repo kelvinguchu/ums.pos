@@ -59,7 +59,7 @@ interface Agent {
   location: string;
   county: string;
   is_active: boolean | null;
-  total_meters: number;
+  total_meters?: number;
 }
 
 interface CurrentUser {
@@ -122,6 +122,7 @@ export default function Agents() {
         `Agent ${agent.is_active ? "deactivated" : "activated"} successfully`
       );
     } catch (error) {
+      console.error("Error updating agent status:", error);
       queryClient.invalidateQueries({ queryKey: ["agents"] });
 
       toast.error("Failed to update agent status");
@@ -201,6 +202,7 @@ export default function Agents() {
       await refetch();
       toast.success("Agents list refreshed");
     } catch (error) {
+      console.error("Error refreshing agents data:", error);
       toast.error("Failed to refresh data");
     }
   };

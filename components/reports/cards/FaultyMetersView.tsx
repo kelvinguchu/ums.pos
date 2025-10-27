@@ -6,7 +6,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { useState } from "react";
+import React, { useState } from "react";
 import { SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { AlertTriangle, AlertCircle, RefreshCw, X } from "lucide-react";
 import { getFaultyMeters } from "@/lib/actions/reports";
@@ -18,6 +18,7 @@ import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { DatePicker } from "@/components/ui/date-picker";
 import { format } from "date-fns";
+import { CalendarDate } from "@internationalized/date";
 import {
   Select,
   SelectContent,
@@ -45,7 +46,6 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/pagination";
-import React from "react";
 
 interface FaultyMeter {
   id: string;
@@ -61,7 +61,7 @@ interface FaultyMeter {
 
 export default function FaultyMetersView() {
   const [searchTerm, setSearchTerm] = useState("");
-  const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
+  const [selectedDate, setSelectedDate] = useState<CalendarDate | null>(null);
   const [selectedStatus, setSelectedStatus] = useState("all");
   const { user } = useAuth();
   const [isUpdating, setIsUpdating] = useState(false);
@@ -85,6 +85,7 @@ export default function FaultyMetersView() {
       await refetch();
       toast.success("Faulty meters data refreshed");
     } catch (err) {
+      console.error("Failed to refresh data:", err);
       toast.error("Failed to refresh data");
     }
   };
@@ -103,7 +104,7 @@ export default function FaultyMetersView() {
       !selectedDate ||
       !meter.returned_at ||
       format(meter.returned_at, "yyyy-MM-dd") ===
-        format(selectedDate, "yyyy-MM-dd");
+        `${selectedDate.year}-${String(selectedDate.month).padStart(2, "0")}-${String(selectedDate.day).padStart(2, "0")}`;
 
     const matchesStatus =
       !selectedStatus ||
@@ -144,6 +145,7 @@ export default function FaultyMetersView() {
           : `Meter has been marked as ${newStatus}`
       );
     } catch (error) {
+      console.error("Failed to update meter status:", error);
       toast.error("Failed to update meter status");
     } finally {
       setIsUpdating(false);
@@ -167,7 +169,7 @@ export default function FaultyMetersView() {
 
   const clearFilters = () => {
     setSearchTerm("");
-    setSelectedDate(undefined);
+    setSelectedDate(null);
     setSelectedStatus("all");
   };
 
@@ -290,7 +292,7 @@ export default function FaultyMetersView() {
                                 </span>
                               </Button>
                             </DialogTrigger>
-                            <DialogContent>
+                            <DialogContent className='bg-gray-50 border-gray-200 px-2'>
                               <DialogHeader>
                                 <DialogTitle>Update Meter Status</DialogTitle>
                                 <DialogDescription>

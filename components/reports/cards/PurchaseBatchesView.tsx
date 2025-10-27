@@ -23,6 +23,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { DatePicker } from "@/components/ui/date-picker";
+import { CalendarDate } from "@internationalized/date";
 import {
   Pagination,
   PaginationContent,
@@ -62,7 +63,7 @@ const sortBatches = (batches: PurchaseBatch[]) => {
 export default function PurchaseBatchesView() {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedType, setSelectedType] = useState("");
-  const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
+  const [selectedDate, setSelectedDate] = useState<CalendarDate | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5;
 
@@ -122,7 +123,7 @@ export default function PurchaseBatchesView() {
         !selectedDate ||
         (batch.purchase_date &&
           format(new Date(batch.purchase_date), "yyyy-MM-dd") ===
-            format(selectedDate, "yyyy-MM-dd"));
+            `${selectedDate.year}-${String(selectedDate.month).padStart(2, "0")}-${String(selectedDate.day).padStart(2, "0")}`);
 
       return matchesSearch && matchesType && matchesDate;
     }) || [];
@@ -143,7 +144,7 @@ export default function PurchaseBatchesView() {
   const clearFilters = () => {
     setSearchTerm("");
     setSelectedType("");
-    setSelectedDate(undefined);
+    setSelectedDate(null);
     setCurrentPage(1);
   };
 
@@ -276,7 +277,10 @@ export default function PurchaseBatchesView() {
                         </TableCell>
                         <TableCell>
                           {batch.purchase_date
-                            ? format(new Date(batch.purchase_date), "dd/MM/yyyy")
+                            ? format(
+                                new Date(batch.purchase_date),
+                                "dd/MM/yyyy"
+                              )
                             : "N/A"}
                         </TableCell>
                         <TableCell>

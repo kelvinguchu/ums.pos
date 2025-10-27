@@ -247,7 +247,7 @@ export default function UsersPage() {
       <Dialog
         open={showChangePasswordDialog}
         onOpenChange={setShowChangePasswordDialog}>
-        <DialogContent className=''>
+        <DialogContent className='bg-gray-50 border-gray-200 px-2'>
           <DialogHeader>
             <DialogTitle>
               {passwordChangeUserId === currentUser?.id
@@ -438,7 +438,7 @@ export default function UsersPage() {
                                           Edit Name
                                         </DropdownMenuItem>
                                       </DialogTrigger>
-                                      <DialogContent className=''>
+                                      <DialogContent className='bg-gray-50 border-gray-200 px-2'>
                                         <DialogHeader>
                                           <DialogTitle>
                                             Edit User Name
@@ -631,7 +631,7 @@ export default function UsersPage() {
                                           Edit Name
                                         </DropdownMenuItem>
                                       </DialogTrigger>
-                                      <DialogContent className=''>
+                                      <DialogContent className='bg-gray-50 border-gray-200 px-2'>
                                         <DialogHeader>
                                           <DialogTitle>
                                             Edit User Name

@@ -159,7 +159,7 @@ export default function GenerateReceiptDialog({
           </Button>
         )}
       </DialogTrigger>
-      <DialogContent className='sm:max-w-[550px]'>
+      <DialogContent className='sm:max-w-[550px] bg-gray-50 border-gray-200 px-2'>
         <DialogHeader>
           <DialogTitle className='text-[#000080] text-xl'>
             Past Sale Receipt

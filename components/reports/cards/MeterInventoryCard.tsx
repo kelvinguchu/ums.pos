@@ -105,13 +105,13 @@ export function MeterInventoryCard({
               </Badge>
             </SheetTrigger>
             <SheetContent
-              className='min-w-[90vw] md:min-w-[70vw]'
+              className='min-w-[90vw] md:min-w-[70vw] bg-gray-50 border-l border-gray-200 px-2'
               side='right'>
               <VisuallyHidden.Root>
                 <SheetTitle>All Meters</SheetTitle>
               </VisuallyHidden.Root>
               <AllMetersView />
-            </SheetContent> 
+            </SheetContent>
           </Sheet>
 
           <Sheet>
@@ -123,8 +123,7 @@ export function MeterInventoryCard({
                 Faulty Meters
               </Badge>
             </SheetTrigger>
-            <SheetContent
-              className='min-w-[90vw] md:min-w-[70vw]'>
+            <SheetContent className='min-w-[90vw] md:min-w-[70vw] bg-gray-50 border-l border-gray-200 px-2'>
               <VisuallyHidden.Root>
                 <SheetTitle>Faulty Meters</SheetTitle>
               </VisuallyHidden.Root>
@@ -141,8 +140,7 @@ export function MeterInventoryCard({
                 Replacements
               </Badge>
             </SheetTrigger>
-            <SheetContent
-              className='min-w-[90vw] md:min-w-[70vw]'>
+            <SheetContent className='min-w-[90vw] md:min-w-[70vw] bg-gray-50 border-l border-gray-200 px-2'>
               <VisuallyHidden.Root>
                 <SheetTitle>Replacements</SheetTitle>
               </VisuallyHidden.Root>
@@ -159,8 +157,7 @@ export function MeterInventoryCard({
                 Purchase History
               </Badge>
             </SheetTrigger>
-            <SheetContent
-              className='min-w-[90vw] md:min-w-[70vw]'>
+            <SheetContent className='min-w-[90vw] md:min-w-[70vw] bg-gray-50 border-l border-gray-200 px-2'>
               <VisuallyHidden.Root>
                 <SheetTitle>Purchase History</SheetTitle>
               </VisuallyHidden.Root>

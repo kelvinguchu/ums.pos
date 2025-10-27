@@ -108,7 +108,7 @@ export default function BatchDetailsDialog({
 
   return (
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>
-      <DialogContent className='sm:max-w-[500px]'>
+      <DialogContent className='sm:max-w-[500px] bg-gray-50 border-gray-200 px-2'>
         <DialogHeader>
           <DialogTitle className='text-xl font-bold text-center pb-4 border-b'>
             Purchase Batch Details
@@ -117,7 +117,9 @@ export default function BatchDetailsDialog({
         <form onSubmit={handleSubmit} className='space-y-6 pt-4'>
           <div className='grid gap-4'>
             <div className='space-y-2'>
-              <label htmlFor='purchaseDate' className='text-sm font-medium'>Purchase Date</label>
+              <label htmlFor='purchaseDate' className='text-sm font-medium'>
+                Purchase Date
+              </label>
               <Input
                 id='purchaseDate'
                 type='date'
@@ -146,7 +148,9 @@ export default function BatchDetailsDialog({
                   </div>
                   <div className='grid grid-cols-2 gap-4'>
                     <div>
-                      <label htmlFor={`unitPrice-${index}`} className='text-xs text-gray-500'>
+                      <label
+                        htmlFor={`unitPrice-${index}`}
+                        className='text-xs text-gray-500'>
                         Unit Price (KES)
                       </label>
                       <Input
@@ -163,7 +167,9 @@ export default function BatchDetailsDialog({
                       />
                     </div>
                     <div>
-                      <label htmlFor={`totalCost-${index}`} className='text-xs text-gray-500'>
+                      <label
+                        htmlFor={`totalCost-${index}`}
+                        className='text-xs text-gray-500'>
                         Total Cost (KES)
                       </label>
                       <Input

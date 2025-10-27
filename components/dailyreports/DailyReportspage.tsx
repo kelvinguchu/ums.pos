@@ -23,6 +23,7 @@ import TimeRangeReportPDF from "./TimeRangeReportPDF";
 import { calculateReportMetrics } from "@/lib/services/reportService";
 import { DateRangePicker } from "@/components/ui/date-range-picker";
 import { DatePicker } from "@/components/ui/date-picker";
+import { CalendarDate } from "@internationalized/date";
 import {
   Popover,
   PopoverContent,
@@ -88,7 +89,7 @@ const DailyReportsPage = () => {
     null
   );
   const [customDateRange, setCustomDateRange] = useState<any>(null);
-  const [specificDate, setSpecificDate] = useState<any>(null);
+  const [specificDate, setSpecificDate] = useState<CalendarDate | null>(null);
   const [agentInventory, setAgentInventory] = useState<AgentInventory[]>([]);
 
   useEffect(() => {
@@ -359,7 +360,11 @@ const DailyReportsPage = () => {
 
     try {
       setIsGeneratingOther(true);
-      const selectedDate = new Date(specificDate);
+      const selectedDate = new Date(
+        specificDate.year,
+        specificDate.month - 1,
+        specificDate.day
+      );
       selectedDate.setHours(0, 0, 0, 0);
       const nextDay = new Date(selectedDate);
       nextDay.setDate(nextDay.getDate() + 1);

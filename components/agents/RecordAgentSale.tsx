@@ -31,6 +31,7 @@ import {
   PaginationPrevious,
 } from "@/components/ui/pagination";
 import { DatePicker } from "@/components/ui/date-picker";
+import { today, getLocalTimeZone } from "@internationalized/date";
 
 interface RecordAgentSaleProps {
   agent: {
@@ -69,7 +70,7 @@ export default function RecordAgentSale({
   agent,
   currentUser,
   onClose,
-}: RecordAgentSaleProps) {
+}: Readonly<RecordAgentSaleProps>) {
   const [inventory, setInventory] = useState<MeterInventory[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedMeters, setSelectedMeters] = useState<MeterInventory[]>([]);
@@ -80,9 +81,7 @@ export default function RecordAgentSale({
   const [userName, setUserName] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedPage, setSelectedPage] = useState(1);
-  const [selectedDate, setSelectedDate] = useState<Date | undefined>(
-    new Date()
-  );
+  const [selectedDate, setSelectedDate] = useState(today(getLocalTimeZone()));
   const ITEMS_PER_PAGE = 10;
 
   useEffect(() => {
@@ -146,8 +145,12 @@ export default function RecordAgentSale({
 
     setIsSubmitting(true);
     try {
-      // Get the sale date from selectedDate or default to current date
-      const saleDate = selectedDate || new Date();
+      // Convert CalendarDate to JavaScript Date
+      const saleDate = new Date(
+        selectedDate.year,
+        selectedDate.month - 1,
+        selectedDate.day
+      );
 
       // Use the new safe agent sale processing function
       const result = await processAgentMeterSale({

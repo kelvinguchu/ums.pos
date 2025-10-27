@@ -76,7 +76,7 @@ export function AddNoteDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className='sm:max-w-[500px]'>
+      <DialogContent className='sm:max-w-[500px] bg-gray-50 border-gray-200 px-2'>
         <DialogHeader>
           <DialogTitle>{existingNote ? "Update Note" : "Add Note"}</DialogTitle>
           <DialogDescription>

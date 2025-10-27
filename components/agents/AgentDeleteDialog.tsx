@@ -66,7 +66,9 @@ export default function AgentDeleteDialog({
       <AlertDialog open={isOpen} onOpenChange={onOpenChange}>
         <AlertDialogContent
           className={
-            isMobile ? "w-[95%] sm:w-full sm:max-w-lg" : "min-w-[700px]"
+            isMobile
+              ? "w-[95%] sm:w-full sm:max-w-lg"
+              : "min-w-[700px] bg-gray-50 border-gray-200 px-2"
           }>
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Agent: {agent?.name}</AlertDialogTitle>
@@ -130,7 +132,9 @@ export default function AgentDeleteDialog({
       <Sheet
         open={isDeletionSheetOpen}
         onOpenChange={onDeletionSheetOpenChange}>
-        <SheetContent side='right' className='w-[90%] sm:min-w-[50vw]'>
+        <SheetContent
+          side='right'
+          className='w-[90%] sm:min-w-[50vw] bg-gray-50 border-l border-gray-200 px-2'>
           <SheetHeader>
             <SheetTitle>Delete Agent</SheetTitle>
           </SheetHeader>

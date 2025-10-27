@@ -94,7 +94,7 @@ export default function EditAgentDialog({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className='sm:max-w-[425px]'>
+      <DialogContent className='sm:max-w-[425px] bg-gray-50 border-gray-200 px-2'>
         <DialogHeader>
           <DialogTitle>Edit Agent Details</DialogTitle>
         </DialogHeader>

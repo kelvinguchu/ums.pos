@@ -63,20 +63,14 @@ const SaleDetailsDialog = ({
   meterTypes,
   trigger,
 }: SaleDetailsDialogProps) => {
-  // Convert CalendarDate to JavaScript Date for the date picker
-  const initialJsDate = useMemo(() => {
-    if (!initialData?.saleDate) return new Date();
-
-    return new Date(
-      initialData.saleDate.year,
-      initialData.saleDate.month - 1,
-      initialData.saleDate.day
-    );
+  // Convert CalendarDate to CalendarDate for the date picker or use today
+  const initialCalendarDate = useMemo(() => {
+    if (!initialData?.saleDate) return today(getLocalTimeZone());
+    return initialData.saleDate;
   }, [initialData]);
 
-  const [selectedDate, setSelectedDate] = useState<Date | undefined>(
-    initialJsDate
-  );
+  const [selectedDate, setSelectedDate] =
+    useState<CalendarDate>(initialCalendarDate);
 
   const [formData, setFormData] = useState<Omit<SaleDetails, "saleDate">>({
     destination: initialData?.destination || "",
@@ -99,25 +93,15 @@ const SaleDetailsDialog = ({
         customerCounty: initialData.customerCounty,
         customerContact: initialData.customerContact,
       });
-      setSelectedDate(initialJsDate);
+      setSelectedDate(initialData.saleDate || today(getLocalTimeZone()));
     }
-  }, [isOpen, initialData, initialJsDate]);
+  }, [isOpen, initialData]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Convert JavaScript Date back to CalendarDate
-    let calendarDate;
-    if (selectedDate) {
-      calendarDate = new CalendarDate(
-        selectedDate.getFullYear(),
-        selectedDate.getMonth() + 1,
-        selectedDate.getDate()
-      );
-    } else {
-      // Default to today if no date selected
-      calendarDate = today(getLocalTimeZone());
-    }
+    // selectedDate is already a CalendarDate
+    const calendarDate = selectedDate || today(getLocalTimeZone());
 
     onSubmit({
       ...formData,
@@ -129,7 +113,7 @@ const SaleDetailsDialog = ({
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       {trigger && <DialogTrigger asChild>{trigger}</DialogTrigger>}
-      <DialogContent className='sm:max-w-[500px] h-[90vh] p-4 sm:p-6'>
+      <DialogContent className='sm:max-w-[500px] h-[90vh] p-4 sm:p-6 bg-gray-50 border-gray-200 px-2'>
         <DialogHeader>
           <DialogTitle className='text-xl font-bold text-center pb-4 border-b'>
             Sale Details

@@ -145,7 +145,7 @@ export function StockAlert() {
           )}
         </Button>
       </SheetTrigger>
-      <SheetContent className='min-w-[90vw] lg:min-w-[35vw]'>
+      <SheetContent className='min-w-[90vw] lg:min-w-[35vw] bg-gray-50 border-l border-gray-200 px-2'>
         <SheetHeader>
           <SheetTitle>Stock Alerts</SheetTitle>
         </SheetHeader>
@@ -167,10 +167,13 @@ export function StockAlert() {
               </TableHeader>
               <TableBody>
                 {allStockItems.map((item) => {
-                  let variant: "default" | "destructive" | "secondary" = "default";
+                  let variant: "default" | "destructive" | "secondary" =
+                    "default";
                   if (item.remaining_meters === 0) {
                     variant = "destructive";
-                  } else if (item.remaining_meters <= (minimumLevels[item.type] || 10)) {
+                  } else if (
+                    item.remaining_meters <= (minimumLevels[item.type] || 10)
+                  ) {
                     variant = "secondary";
                   }
                   return (
@@ -181,9 +184,7 @@ export function StockAlert() {
                         </Badge>
                       </TableCell>
                       <TableCell>
-                        <Badge variant={variant}>
-                          {item.remaining_meters}
-                        </Badge>
+                        <Badge variant={variant}>{item.remaining_meters}</Badge>
                       </TableCell>
                       <TableCell>{minimumLevels[item.type] || 10}</TableCell>
                     </TableRow>

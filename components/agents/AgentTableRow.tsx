@@ -12,7 +12,7 @@ interface Agent {
   location: string;
   county: string;
   is_active: boolean | null;
-  total_meters: number;
+  total_meters?: number;
 }
 
 interface CurrentUser {

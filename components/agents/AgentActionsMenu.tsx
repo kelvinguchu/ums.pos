@@ -46,7 +46,7 @@ interface Agent {
   location: string;
   county: string;
   is_active: boolean | null;
-  total_meters: number;
+  total_meters?: number;
 }
 
 interface CurrentUser {
@@ -90,7 +90,7 @@ export default function AgentActionsMenu({
               View Inventory
             </DropdownMenuItem>
           </SheetTrigger>
-          <SheetContent className='w-full sm:min-w-[50vw] overflow-y-auto'>
+          <SheetContent className='w-full sm:min-w-[50vw] bg-gray-50 border-l border-gray-200 px-2 overflow-y-auto'>
             <SheetHeader>
               <SheetTitle className='text-center'>
                 Agent Inventory - {agent.name}
@@ -125,7 +125,7 @@ export default function AgentActionsMenu({
                   Record Sale
                 </DropdownMenuItem>
               </DrawerTrigger>
-              <DrawerContent>
+              <DrawerContent className='bg-gray-50 border-gray-200 px-2'>
                 <DrawerHeader>
                   <DrawerTitle>Record Sale - {agent.name}</DrawerTitle>
                 </DrawerHeader>
@@ -152,7 +152,7 @@ export default function AgentActionsMenu({
                   Assign Meters
                 </DropdownMenuItem>
               </SheetTrigger>
-              <SheetContent className='min-w-[50vw]'>
+              <SheetContent className='min-w-[50vw] bg-gray-50 border-l border-gray-200 px-2'>
                 <SheetHeader>
                   <SheetTitle className='flex items-center justify-center gap-2'>
                     <Badge
@@ -177,7 +177,7 @@ export default function AgentActionsMenu({
                   Return Meters
                 </DropdownMenuItem>
               </SheetTrigger>
-              <SheetContent className='min-w-[50vw]'>
+              <SheetContent className='min-w-[50vw] bg-gray-50 border-l border-gray-200 px-2'>
                 <SheetHeader>
                   <SheetTitle className='flex items-center justify-center gap-2'>
                     <Badge

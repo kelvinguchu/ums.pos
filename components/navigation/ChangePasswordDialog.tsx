@@ -58,7 +58,7 @@ export function ChangePasswordDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
+      <DialogContent className='bg-gray-50 border-gray-200 px-2'>
         <DialogHeader>
           <DialogTitle>Change Password</DialogTitle>
         </DialogHeader>

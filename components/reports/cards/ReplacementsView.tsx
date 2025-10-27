@@ -18,6 +18,7 @@ import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { DatePicker } from "@/components/ui/date-picker";
 import { format } from "date-fns";
+import { CalendarDate } from "@internationalized/date";
 import {
   Pagination,
   PaginationContent,
@@ -40,7 +41,7 @@ interface Replacement {
 
 export default function ReplacementsView() {
   const [searchTerm, setSearchTerm] = useState("");
-  const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
+  const [selectedDate, setSelectedDate] = useState<CalendarDate | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 7;
 
@@ -61,6 +62,7 @@ export default function ReplacementsView() {
       await refetch();
       toast.success("Replacement data refreshed");
     } catch (err) {
+      console.error("Failed to refresh data:", err);
       toast.error("Failed to refresh data");
     }
   };
@@ -86,7 +88,7 @@ export default function ReplacementsView() {
       !selectedDate ||
       !replacement.replacement_date ||
       format(replacement.replacement_date, "yyyy-MM-dd") ===
-        format(selectedDate, "yyyy-MM-dd");
+        `${selectedDate.year}-${String(selectedDate.month).padStart(2, "0")}-${String(selectedDate.day).padStart(2, "0")}`;
 
     return matchesSearch && matchesDate;
   });
@@ -114,7 +116,7 @@ export default function ReplacementsView() {
 
   const clearFilters = () => {
     setSearchTerm("");
-    setSelectedDate(undefined);
+    setSelectedDate(null);
   };
 
   return (

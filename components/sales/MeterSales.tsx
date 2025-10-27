@@ -47,6 +47,7 @@ import GenerateReceiptDialog from "./GenerateReceiptDialog";
 import { DatePicker } from "@/components/ui/date-picker";
 import { DateRangePicker } from "@/components/ui/date-range-picker";
 import { AddNoteDialog } from "./AddNoteDialog";
+import { CalendarDate } from "@internationalized/date";
 
 const EmptyState = ({ message }: { message: string }) => (
   <div className='flex flex-col items-center justify-center p-8 text-gray-500'>
@@ -61,7 +62,7 @@ export default function MeterSales() {
   const [searchUser, setSearchUser] = useState("");
   const [selectedType, setSelectedType] = useState<string | null>(null);
   const [dateRange, setDateRange] = useState<any>(null);
-  const [selectedDate, setSelectedDate] = useState<any>(null);
+  const [selectedDate, setSelectedDate] = useState<CalendarDate | null>(null);
   const itemsPerPage = 10;
   const [selectedBatch, setSelectedBatch] = useState<string | null>(null);
   const [selectedCustomerType, setSelectedCustomerType] = useState<
@@ -126,7 +127,11 @@ export default function MeterSales() {
     }
 
     if (selectedDate) {
-      const date = new Date(selectedDate.toString());
+      const date = new Date(
+        selectedDate.year,
+        selectedDate.month - 1,
+        selectedDate.day
+      );
       filtered = filtered.filter((batch) => {
         if (!batch.sale_date) return false;
         return batch.sale_date.toDateString() === date.toDateString();
