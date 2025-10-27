@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "mcp__context7__resolve-library-id",
+      "mcp__context7__get-library-docs",
+      "Bash(npx tsc:*)",
+      "WebFetch(domain:orm.drizzle.team)",
+      "WebFetch(domain:supabase.com)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
