@@ -393,7 +393,7 @@ export default function SellMeters({ currentUser }: { currentUser: any }) {
       }.pdf`;
       document.body.appendChild(link);
       link.click();
-      document.body.remove();
+      document.body.removeChild(link);
       URL.revokeObjectURL(url);
 
       // Clear the submitted meters after download

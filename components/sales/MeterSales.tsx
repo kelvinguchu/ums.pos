@@ -251,7 +251,7 @@ export default function MeterSales() {
     }.pdf`;
     document.body.appendChild(link);
     link.click();
-    link.remove();
+    document.body.removeChild(link);
     URL.revokeObjectURL(url);
   };
 

@@ -44,7 +44,7 @@ export function useReceiptDownload() {
     link.download = `meter-addition-${new Date().toISOString().split("T")[0]}.pdf`;
     document.body.appendChild(link);
     link.click();
-    link.remove();
+    document.body.removeChild(link);
     URL.revokeObjectURL(url);
   }, []);
 

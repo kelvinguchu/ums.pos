@@ -39,7 +39,7 @@ export function FormActions({
     link.download = filename;
     document.body.appendChild(link);
     link.click();
-    link.remove();
+    document.body.removeChild(link);
   };
 
   return (

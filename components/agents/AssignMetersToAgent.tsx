@@ -260,7 +260,7 @@ export default function AssignMetersToAgent({
       }.pdf`;
       document.body.appendChild(link);
       link.click();
-      link.remove();
+      document.body.removeChild(link);
       URL.revokeObjectURL(url);
 
       localStorage.removeItem("lastAssignmentDetails");

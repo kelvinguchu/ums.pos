@@ -180,7 +180,7 @@ const DailyReportsPage = () => {
       }.pdf`;
       document.body.appendChild(link);
       link.click();
-      document.body.remove();
+      document.body.removeChild(link);
       URL.revokeObjectURL(url);
 
       toast.success("Daily report downloaded successfully!");
@@ -301,7 +301,7 @@ const DailyReportsPage = () => {
     link.download = `${filename}-${new Date().toISOString().split("T")[0]}.pdf`;
     document.body.appendChild(link);
     link.click();
-    document.body.remove();
+    document.body.removeChild(link);
     URL.revokeObjectURL(url);
 
     toast.success("Report downloaded successfully!");
