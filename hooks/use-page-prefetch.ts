@@ -72,19 +72,6 @@ function aggregateTopSellers(topUsers: any[]) {
   }, []);
   return aggregated.sort((a, b) => b.total_sales - a.total_sales);
 }
-
-/**
- * Helper function to transform sale batch data
- * Extracted to reduce nesting levels
- */
-function transformSaleBatches(data: any[]) {
-  return data.map((batch) => ({
-    ...batch,
-    total_price: Number(batch.total_price),
-    unit_price: Number(batch.unit_price),
-  }));
-}
-
 /**
  * Hook that provides prefetch functions for all navigation pages
  * Prefetching data on hover improves perceived performance
@@ -110,10 +97,10 @@ export function usePagePrefetch() {
    */
   const prefetchSales = useCallback(async () => {
     await queryClient.prefetchQuery({
-      queryKey: ["saleBatches"],
+      queryKey: ["saleBatches", 1, 10],
       queryFn: async () => {
-        const data = await getSaleBatches();
-        return transformSaleBatches(data);
+        const data = await getSaleBatches(1, 10);
+        return data;
       },
       staleTime: STALE_TIME,
     });
@@ -178,7 +165,7 @@ export function usePagePrefetch() {
     await Promise.all([
       queryClient.prefetchQuery({
         queryKey: ["sales"],
-        queryFn: getSaleBatches,
+        queryFn: () => getSaleBatches(1, 1000),
         staleTime: STALE_TIME,
       }),
       queryClient.prefetchQuery({
