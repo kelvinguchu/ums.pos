@@ -1,5 +1,5 @@
 "use client";
-import React, { useEffect, useState, useMemo } from "react";
+import React, { useMemo } from "react";
 import {
   Table,
   TableBody,
@@ -57,23 +57,52 @@ const EmptyState = ({ message }: { message: string }) => (
 );
 
 export default function MeterSales() {
-  const [currentPage, setCurrentPage] = useState(1);
-  const [searchUser, setSearchUser] = useState("");
-  const [selectedType, setSelectedType] = useState<string | null>(null);
-  const [dateRange, setDateRange] = useState<any>(null);
-  const [selectedDate, setSelectedDate] = useState<CalendarDate | null>(null);
+  const [currentPage, setCurrentPage] = React.useState(1);
+  const [searchUser, setSearchUser] = React.useState("");
+  const [selectedType, setSelectedType] = React.useState<string | null>(null);
+  const [dateRange, setDateRange] = React.useState<any>(null);
+  const [selectedDate, setSelectedDate] = React.useState<CalendarDate | null>(
+    null
+  );
   const itemsPerPage = 10;
-  const [selectedBatch, setSelectedBatch] = useState<string | null>(null);
-  const [selectedCustomerType, setSelectedCustomerType] = useState<
+  const [selectedBatch, setSelectedBatch] = React.useState<string | null>(null);
+  const [selectedCustomerType, setSelectedCustomerType] = React.useState<
     string | null
   >(null);
-  const [noteDialogOpen, setNoteDialogOpen] = useState(false);
+  const [noteDialogOpen, setNoteDialogOpen] = React.useState(false);
   const [selectedBatchForNote, setSelectedBatchForNote] =
-    useState<SaleBatch | null>(null);
+    React.useState<SaleBatch | null>(null);
 
-  // Use the new hook
-  const { saleBatches, isLoading, isError, error, refetch } =
-    useMeterSalesData();
+  // Build filters object
+  const filters = useMemo(() => {
+    const f: any = {};
+    if (searchUser) f.searchUser = searchUser;
+    if (selectedType) f.meterType = selectedType;
+    if (selectedCustomerType) f.customerType = selectedCustomerType;
+    if (dateRange?.start && dateRange?.end) {
+      f.dateRange = {
+        start: new Date(dateRange.start.toString()),
+        end: new Date(dateRange.end.toString()),
+      };
+    }
+    if (selectedDate) {
+      f.specificDate = new Date(
+        selectedDate.year,
+        selectedDate.month - 1,
+        selectedDate.day
+      );
+    }
+    return Object.keys(f).length > 0 ? f : undefined;
+  }, [searchUser, selectedType, selectedCustomerType, dateRange, selectedDate]);
+
+  // Use the hook with server-side pagination
+  const { saleBatches, pagination, isLoading, isError, error, refetch } =
+    useMeterSalesData(currentPage, itemsPerPage, filters);
+
+  // Reset to page 1 when filters change
+  React.useEffect(() => {
+    setCurrentPage(1);
+  }, [filters]);
 
   // Add refresh handler
   const handleRefresh = () => {
@@ -91,66 +120,6 @@ export default function MeterSales() {
   const handleNoteSuccess = () => {
     refetch(); // Refresh the data to show the updated note
   };
-
-  // Filter data - memoized to prevent infinite re-renders and improve performance
-  const filteredBatches = useMemo(() => {
-    let filtered = [...saleBatches];
-
-    if (searchUser) {
-      filtered = filtered.filter(
-        (batch) =>
-          batch.user_name.toLowerCase().includes(searchUser.toLowerCase()) ||
-          batch.recipient.toLowerCase().includes(searchUser.toLowerCase())
-      );
-    }
-
-    if (selectedType) {
-      filtered = filtered.filter(
-        (batch) => batch.meter_type.toLowerCase() === selectedType.toLowerCase()
-      );
-    }
-
-    if (selectedCustomerType) {
-      filtered = filtered.filter(
-        (batch) => batch.customer_type === selectedCustomerType
-      );
-    }
-
-    if (dateRange?.start && dateRange?.end) {
-      const startDate = new Date(dateRange.start.toString());
-      const endDate = new Date(dateRange.end.toString());
-      filtered = filtered.filter((batch) => {
-        if (!batch.sale_date) return false;
-        return batch.sale_date >= startDate && batch.sale_date <= endDate;
-      });
-    }
-
-    if (selectedDate) {
-      const date = new Date(
-        selectedDate.year,
-        selectedDate.month - 1,
-        selectedDate.day
-      );
-      filtered = filtered.filter((batch) => {
-        if (!batch.sale_date) return false;
-        return batch.sale_date.toDateString() === date.toDateString();
-      });
-    }
-
-    return filtered;
-  }, [
-    saleBatches,
-    searchUser,
-    selectedType,
-    selectedCustomerType,
-    dateRange,
-    selectedDate,
-  ]);
-
-  // Reset to page 1 when filters change
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [filteredBatches]);
 
   // Add loading state
   if (isLoading) {
@@ -174,11 +143,9 @@ export default function MeterSales() {
     );
   }
 
-  // Pagination calculations
-  const totalPages = Math.ceil(filteredBatches.length / itemsPerPage);
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const endIndex = startIndex + itemsPerPage;
-  const currentBatches = filteredBatches.slice(startIndex, endIndex);
+  // Pagination calculations - now using server-side pagination
+  const totalPages = pagination.totalPages;
+  const currentBatches = saleBatches; // Data is already paginated from server
 
   // Function to format date
   const formatDate = (date: Date | null) => {
@@ -209,7 +176,8 @@ export default function MeterSales() {
   };
 
   const handleExportPDF = async () => {
-    const dataToExport = hasActiveFilters() ? currentBatches : filteredBatches;
+    // Export current page data only (server-side pagination)
+    const dataToExport = currentBatches;
 
     const headers = [
       "Seller",
@@ -259,7 +227,8 @@ export default function MeterSales() {
   };
 
   const handleExportCSV = () => {
-    const dataToExport = hasActiveFilters() ? currentBatches : filteredBatches;
+    // Export current page data only (server-side pagination)
+    const dataToExport = currentBatches;
 
     // Transform the data into the format expected by generateCSV
     const csvData = dataToExport.map((batch) => ({

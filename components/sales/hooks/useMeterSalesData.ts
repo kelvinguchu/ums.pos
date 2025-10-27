@@ -19,27 +19,39 @@ export interface SaleBatch {
   note_by: string | null;
 }
 
-const CACHE_TIME = 1000 * 60 * 10; // 10 minutes - increased for better performance
-const STALE_TIME = 1000 * 60 * 2; // 2 minutes - data refreshes less frequently
+const CACHE_TIME = 1000 * 60 * 5; // 5 minutes - keep in cache
+const STALE_TIME = 1000 * 30; // 30 seconds - refetch after this time
 
-export function useMeterSalesData() {
-  // Fetch sales data with caching
+export function useMeterSalesData(
+  page: number = 1,
+  limit: number = 10,
+  filters?: {
+    searchUser?: string;
+    meterType?: string;
+    customerType?: string;
+    dateRange?: { start: Date; end: Date };
+    specificDate?: Date;
+  }
+) {
+  // Fetch sales data with caching and server-side pagination
   const salesQuery = useQuery({
-    queryKey: ["saleBatches"],
+    queryKey: ["saleBatches", page, limit, filters],
     queryFn: async () => {
-      const data = await getSaleBatches();
-      return data.map((batch) => ({
-        ...batch,
-        total_price: Number(batch.total_price),
-        unit_price: Number(batch.unit_price),
-      }));
+      const data = await getSaleBatches(page, limit, filters);
+      return data;
     },
     gcTime: CACHE_TIME,
     staleTime: STALE_TIME,
   });
 
   return {
-    saleBatches: salesQuery.data || [],
+    saleBatches: salesQuery.data?.batches || [],
+    pagination: salesQuery.data?.pagination || {
+      total: 0,
+      page: 1,
+      limit: 10,
+      totalPages: 0,
+    },
     isLoading: salesQuery.isLoading,
     isError: salesQuery.isError,
     error: salesQuery.error,

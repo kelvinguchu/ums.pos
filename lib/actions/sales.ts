@@ -154,17 +154,82 @@ export async function addSaleBatch(batchData: Omit<SaleBatchData, "id">) {
   return data;
 }
 
-export async function getSaleBatches() {
-  // Fetch only the last 1000 sales records for better performance
-  // This should cover most use cases while maintaining fast load times
+export async function getSaleBatches(
+  page: number = 1,
+  limit: number = 10,
+  filters?: {
+    searchUser?: string;
+    meterType?: string;
+    customerType?: string;
+    dateRange?: { start: Date; end: Date };
+    specificDate?: Date;
+  }
+) {
+  const offset = (page - 1) * limit;
+
+  // Build where conditions
+  const conditions = [];
+
+  if (filters?.searchUser) {
+    conditions.push(
+      or(
+        ilike(saleBatches.user_name, `%${filters.searchUser}%`),
+        ilike(saleBatches.recipient, `%${filters.searchUser}%`)
+      )
+    );
+  }
+
+  if (filters?.meterType) {
+    conditions.push(ilike(saleBatches.meter_type, filters.meterType));
+  }
+
+  if (filters?.customerType) {
+    conditions.push(eq(saleBatches.customer_type, filters.customerType));
+  }
+
+  if (filters?.dateRange) {
+    conditions.push(
+      and(
+        gte(saleBatches.sale_date, filters.dateRange.start),
+        lte(saleBatches.sale_date, filters.dateRange.end)
+      )
+    );
+  }
+
+  if (filters?.specificDate) {
+    const startOfDay = new Date(filters.specificDate);
+    startOfDay.setHours(0, 0, 0, 0);
+    const endOfDay = new Date(filters.specificDate);
+    endOfDay.setHours(23, 59, 59, 999);
+    conditions.push(
+      and(
+        gte(saleBatches.sale_date, startOfDay),
+        lte(saleBatches.sale_date, endOfDay)
+      )
+    );
+  }
+
+  const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
+
+  // Get total count
+  const countResult = await db
+    .select({ count: count() })
+    .from(saleBatches)
+    .where(whereClause);
+
+  const total = Number(countResult[0]?.count || 0);
+
+  // Get paginated data
   const data = await db
     .select()
     .from(saleBatches)
+    .where(whereClause)
     .orderBy(desc(saleBatches.sale_date))
-    .limit(1000);
+    .limit(limit)
+    .offset(offset);
 
   // Convert numeric fields to numbers and cast to our custom SaleBatch type
-  return data.map((batch) => ({
+  const batches = data.map((batch) => ({
     ...batch,
     unit_price: Number(batch.unit_price),
     total_price: Number(batch.total_price),
@@ -186,6 +251,16 @@ export async function getSaleBatches() {
     notes: string | null;
     note_by: string | null;
   }>;
+
+  return {
+    batches,
+    pagination: {
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit),
+    },
+  };
 }
 
 export async function getSalesChartData(days: number = 30) {

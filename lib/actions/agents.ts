@@ -398,10 +398,21 @@ export async function getAgentTransactions(
       ? ilike(agents.name, `%${searchTerm}%`)
       : undefined;
 
-    // Limit to most recent 50 transactions for performance
-    const MAX_RECORDS = 50;
+    // First, get the total count with a separate efficient query
+    const countResult = await db
+      .select({
+        count:
+          sql<number>`COUNT(DISTINCT (${agentTransactions.agent_id}, ${agentTransactions.transaction_type}, ${agentTransactions.meter_type}, ${agentTransactions.transaction_date}))`.as(
+            "count"
+          ),
+      })
+      .from(agentTransactions)
+      .leftJoin(agents, eq(agentTransactions.agent_id, agents.id))
+      .where(whereConditions);
 
-    // Get grouped transactions with total quantity (limited to 50)
+    const total = Number(countResult[0]?.count || 0);
+
+    // Get only the page of data needed
     const groupedTransactions = await db
       .select({
         agent_id: agentTransactions.agent_id,
@@ -425,19 +436,11 @@ export async function getAgentTransactions(
         agentTransactions.transaction_date
       )
       .orderBy(desc(agentTransactions.transaction_date))
-      .limit(MAX_RECORDS);
-
-    // Total is limited to MAX_RECORDS for better performance
-    const total = groupedTransactions.length;
-
-    // Apply pagination to grouped results
-    const paginatedTransactions = groupedTransactions.slice(
-      offset,
-      Math.min(offset + limit, MAX_RECORDS)
-    );
+      .limit(limit)
+      .offset(offset);
 
     return {
-      transactions: paginatedTransactions.map((t, index) => ({
+      transactions: groupedTransactions.map((t, index) => ({
         id: `${t.agent_id}-${new Date(t.transaction_date!).getTime()}-${t.transaction_type}-${t.meter_type}-${offset + index}`,
         agent_id: t.agent_id,
         agent_name: t.agent_name,
