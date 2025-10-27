@@ -13,7 +13,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { RefreshCw, X } from "lucide-react";
+import { RefreshCw, X, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import {
   Select,
@@ -166,7 +166,9 @@ export default function PurchaseBatchesView() {
       <CardContent>
         {isLoading ? (
           <div className='flex justify-center items-center min-h-[200px]'>
-            <Loader />
+            <div>
+                    <Loader2 className='h-3 w-3 animate-spin' />
+                  </div>
           </div>
         ) : (
           <>

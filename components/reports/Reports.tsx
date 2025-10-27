@@ -1,9 +1,8 @@
 "use client";
 import React, { Suspense } from "react";
 import { useReportsData } from "./hooks/useReportsData";
-import Loader from "@/components/ui/Loader";
 import { Button } from "@/components/ui/button";
-import { RefreshCw } from "lucide-react";
+import { RefreshCw, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { MeterInventoryCard } from "./cards/MeterInventoryCard";
 import { BestSellerCard } from "./cards/BestSellerCard";
@@ -66,7 +65,11 @@ export default function Reports() {
   }
 
   if (isLoading) {
-    return <Loader />;
+    return (
+      <div>
+        <Loader2 className='h-3 w-3 animate-spin' />
+      </div>
+    );
   }
 
   return (

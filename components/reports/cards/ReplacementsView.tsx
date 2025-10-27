@@ -8,11 +8,10 @@ import {
 } from "@/components/ui/table";
 import React, { useState } from "react";
 import { SheetHeader, SheetTitle } from "@/components/ui/sheet";
-import { RefreshCw, AlertCircle, X } from "lucide-react";
+import { RefreshCw, AlertCircle, X, Loader2 } from "lucide-react";
 import { getMeterReplacements } from "@/lib/actions/reports";
 import { EmptyState } from "./EmptyState";
 import { useQuery } from "@tanstack/react-query";
-import Loader from "@/components/ui/Loader";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
@@ -139,7 +138,9 @@ export default function ReplacementsView() {
 
       {isLoading ? (
         <div className='flex justify-center items-center min-h-[200px]'>
-          <Loader />
+          <div>
+                  <Loader2 className='h-3 w-3 animate-spin' />
+                </div>
         </div>
       ) : (
         <>

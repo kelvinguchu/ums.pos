@@ -9,6 +9,7 @@ export function useAgentTransactions(
   return useQuery({
     queryKey: ["agentTransactions", page, limit, searchTerm],
     queryFn: () => getAgentTransactions(page, limit, searchTerm),
-    staleTime: 30000, // Consider data fresh for 30 seconds
+    staleTime: 1000 * 60 * 2, // Consider data fresh for 2 minutes
+    gcTime: 1000 * 60 * 5, // Keep in cache for 5 minutes
   });
 }

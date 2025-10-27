@@ -92,6 +92,7 @@ export default function AgentHistory() {
       await refetch();
       toast.success("Transaction history refreshed");
     } catch (error) {
+      console.error("Failed to refresh data:", error);
       toast.error("Failed to refresh data");
     }
   };

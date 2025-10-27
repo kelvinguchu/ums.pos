@@ -8,11 +8,10 @@ import {
 } from "@/components/ui/table";
 import React, { useState } from "react";
 import { SheetHeader, SheetTitle } from "@/components/ui/sheet";
-import { AlertTriangle, AlertCircle, RefreshCw, X } from "lucide-react";
+import { AlertTriangle, AlertCircle, RefreshCw, X, Loader2 } from "lucide-react";
 import { getFaultyMeters } from "@/lib/actions/reports";
 import { EmptyState } from "./EmptyState";
 import { useQuery } from "@tanstack/react-query";
-import Loader from "@/components/ui/Loader";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
@@ -199,7 +198,9 @@ export default function FaultyMetersView() {
 
       {isLoading ? (
         <div className='flex justify-center items-center min-h-[200px]'>
-          <Loader />
+          <div>
+            <Loader2 className='h-3 w-3 animate-spin' />
+          </div>
         </div>
       ) : (
         <>

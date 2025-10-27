@@ -19,8 +19,8 @@ export interface SaleBatch {
   note_by: string | null;
 }
 
-const CACHE_TIME = 1000 * 60 * 5; // 5 minutes
-const STALE_TIME = 1000 * 30; // 30 seconds
+const CACHE_TIME = 1000 * 60 * 10; // 10 minutes - increased for better performance
+const STALE_TIME = 1000 * 60 * 2; // 2 minutes - data refreshes less frequently
 
 export function useMeterSalesData() {
   // Fetch sales data with caching

@@ -398,7 +398,10 @@ export async function getAgentTransactions(
       ? ilike(agents.name, `%${searchTerm}%`)
       : undefined;
 
-    // Get grouped transactions with total quantity
+    // Limit to most recent 50 transactions for performance
+    const MAX_RECORDS = 50;
+
+    // Get grouped transactions with total quantity (limited to 50)
     const groupedTransactions = await db
       .select({
         agent_id: agentTransactions.agent_id,
@@ -421,15 +424,16 @@ export async function getAgentTransactions(
         agentTransactions.meter_type,
         agentTransactions.transaction_date
       )
-      .orderBy(desc(agentTransactions.transaction_date));
+      .orderBy(desc(agentTransactions.transaction_date))
+      .limit(MAX_RECORDS);
 
-    // Get total count of grouped transactions
+    // Total is limited to MAX_RECORDS for better performance
     const total = groupedTransactions.length;
 
     // Apply pagination to grouped results
     const paginatedTransactions = groupedTransactions.slice(
       offset,
-      offset + limit
+      Math.min(offset + limit, MAX_RECORDS)
     );
 
     return {

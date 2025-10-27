@@ -155,10 +155,13 @@ export async function addSaleBatch(batchData: Omit<SaleBatchData, "id">) {
 }
 
 export async function getSaleBatches() {
+  // Fetch only the last 1000 sales records for better performance
+  // This should cover most use cases while maintaining fast load times
   const data = await db
     .select()
     .from(saleBatches)
-    .orderBy(desc(saleBatches.sale_date));
+    .orderBy(desc(saleBatches.sale_date))
+    .limit(1000);
 
   // Convert numeric fields to numbers and cast to our custom SaleBatch type
   return data.map((batch) => ({

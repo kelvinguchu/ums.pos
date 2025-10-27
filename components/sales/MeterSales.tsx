@@ -1,5 +1,5 @@
 "use client";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import {
   Table,
   TableBody,
@@ -57,7 +57,6 @@ const EmptyState = ({ message }: { message: string }) => (
 );
 
 export default function MeterSales() {
-  const [filteredBatches, setFilteredBatches] = useState<SaleBatch[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [searchUser, setSearchUser] = useState("");
   const [selectedType, setSelectedType] = useState<string | null>(null);
@@ -93,8 +92,8 @@ export default function MeterSales() {
     refetch(); // Refresh the data to show the updated note
   };
 
-  // Filter data - memoized to prevent infinite re-renders
-  useEffect(() => {
+  // Filter data - memoized to prevent infinite re-renders and improve performance
+  const filteredBatches = useMemo(() => {
     let filtered = [...saleBatches];
 
     if (searchUser) {
@@ -138,8 +137,7 @@ export default function MeterSales() {
       });
     }
 
-    setFilteredBatches(filtered);
-    setCurrentPage(1);
+    return filtered;
   }, [
     saleBatches,
     searchUser,
@@ -148,6 +146,11 @@ export default function MeterSales() {
     dateRange,
     selectedDate,
   ]);
+
+  // Reset to page 1 when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [filteredBatches]);
 
   // Add loading state
   if (isLoading) {
