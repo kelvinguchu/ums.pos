@@ -173,7 +173,7 @@ export function MeterSalesRow({
 
   return (
     <Sheet open={isOpen} onOpenChange={onOpenChange}>
-      <SheetContent className='min-w-[60vw] w-full '>
+      <SheetContent className='min-w-[60vw] w-full bg-gray-50 border-l border-gray-200 px-2'>
         <SheetHeader className='space-y-1'>
           <SheetTitle className='flex items-center gap-2 text-xl'>
             <span>Sale Details</span>
