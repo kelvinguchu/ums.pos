@@ -35,10 +35,10 @@ const getIconColorClass = (title: string): string => {
 
 // Helper function for sheet className
 const getSheetClassName = (title: string): string => {
-  if (title === "Sell Meters") return "w-full min-w-[50vw] overflow-y-auto p-0";
+  if (title === "Sell Meters") return "w-full min-w-[50vw] overflow-y-auto p-0 bg-gray-50 border-l border-gray-200 px-2";
   if (title === "Add Meters")
-    return "min-w-[60vw] max-h-[100vh] overflow-y-auto";
-  return "min-w-[70vw] max-h-[100vh] overflow-y-auto";
+    return "min-w-[60vw] max-h-[100vh] overflow-y-auto bg-gray-50 border-l border-gray-200 px-2";
+  return "min-w-[70vw] max-h-[100vh] overflow-y-auto bg-gray-50 border-l border-gray-200 px-2";
 };
 
 // Helper function to render sheet content

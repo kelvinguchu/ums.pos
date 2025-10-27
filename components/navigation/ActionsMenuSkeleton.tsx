@@ -21,7 +21,7 @@ export function ActionsMenuSkeleton() {
       <SidebarGroupLabel className='px-2 text-sm font-medium text-gray-500 uppercase tracking-wider'>
         Actions
       </SidebarGroupLabel>
-      <SidebarGroupContent className='mt-2 space-y-1 w-full'>
+      <SidebarGroupContent className='mt-2 space-y-1 w-full '>
         <SidebarMenu className='w-full'>
           {skeletonActionItems.map((label) => (
             <ActionItemSkeleton key={`action-skeleton-${label}`} />
