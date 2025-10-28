@@ -26,7 +26,7 @@ const ErrorState = ({
 }) => (
   <div className='flex flex-col items-center justify-center min-h-[60vh] gap-4'>
     <div className='text-lg text-red-500'>Error: {message}</div>
-    <Button onClick={onRetry} variant='outline'>
+    <Button onClick={onRetry} variant='outline' className='cursor-pointer'>
       <RefreshCw className='mr-2 h-4 w-4' />
       Retry
     </Button>
@@ -80,7 +80,7 @@ export default function Reports() {
           size='icon'
           onClick={handleRefresh}
           disabled={isLoading || isRefreshing}
-          className='hover:bg-gray-100'>
+          className='hover:bg-gray-100 cursor-pointer'>
           <RefreshCw
             className={cn(
               "h-4 w-4 transition-transform",

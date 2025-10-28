@@ -73,7 +73,7 @@ export function ChangePasswordDialog({
             required
           />
           <button
-            className='absolute inset-y-px end-px flex h-full w-9 items-center justify-center rounded-e-lg text-muted-foreground/80'
+            className='absolute inset-y-px end-px flex h-full w-9 items-center justify-center rounded-e-lg text-muted-foreground/80 cursor-pointer'
             type='button'
             onClick={toggleVisibility}>
             {isVisible ? (
@@ -85,9 +85,13 @@ export function ChangePasswordDialog({
         </div>
         <DialogFooter>
           <DialogClose asChild>
-            <Button variant='outline'>Cancel</Button>
+            <Button variant='outline' className='cursor-pointer'>
+              Cancel
+            </Button>
           </DialogClose>
-          <Button onClick={handleChangePassword}>Change Password</Button>
+          <Button onClick={handleChangePassword} className='cursor-pointer'>
+            Change Password
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

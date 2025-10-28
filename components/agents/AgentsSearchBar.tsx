@@ -36,7 +36,7 @@ export default function AgentsSearchBar({
           variant='outline'
           size='icon'
           onClick={onRefresh}
-          className='hover:bg-gray-100'
+          className='hover:bg-gray-100 cursor-pointer'
           disabled={isRefreshing}>
           <RefreshCw
             className={cn(

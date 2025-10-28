@@ -45,8 +45,6 @@ export const userProfiles = pgTable("user_profiles", {
   role: userRoleEnum("role").default("user"),
   is_active: boolean("is_active").default(true),
   push_enabled: boolean("push_enabled").default(false),
-  created_at: timestamp("created_at").defaultNow(),
-  updated_at: timestamp("updated_at").defaultNow(),
 });
 
 // Meters Table

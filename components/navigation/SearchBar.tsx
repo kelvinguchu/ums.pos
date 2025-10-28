@@ -376,7 +376,7 @@ export function SearchBar(props: Readonly<SearchBarProps>) {
                 <Button
                   variant='outline'
                   size='sm'
-                  className='h-7 text-primary hover:text-white hover:bg-primary w-full sm:w-auto'
+                  className='h-7 text-primary hover:text-white hover:bg-primary w-full sm:w-auto cursor-pointer'
                   onClick={() => {
                     if (result.agent?.id && result.agent.name) {
                       onAgentInventoryOpen(result.agent.id, result.agent.name);
@@ -425,7 +425,7 @@ export function SearchBar(props: Readonly<SearchBarProps>) {
                 setRefreshNonce((nonce) => nonce + 1);
                 setIsSearchOpen(true);
               }}
-              className='absolute right-8 top-2.5 text-gray-400 hover:text-gray-600 disabled:opacity-50'
+              className='absolute right-8 top-2.5 text-gray-400 hover:text-gray-600 disabled:opacity-50 cursor-pointer'
               disabled={isLoading}>
               <RefreshCw
                 className={cn(
@@ -441,7 +441,7 @@ export function SearchBar(props: Readonly<SearchBarProps>) {
                 setIsSearchOpen(false);
                 setIsManualRefreshPending(false);
               }}
-              className='absolute right-2 top-2.5 text-gray-400 hover:text-gray-600'>
+              className='absolute right-2 top-2.5 text-gray-400 hover:text-gray-600 cursor-pointer'>
               <X className='h-4 w-4' />
             </button>
           </>

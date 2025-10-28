@@ -36,6 +36,7 @@ import AgentsSearchBar from "./AgentsSearchBar";
 import AgentTableRow from "./AgentTableRow";
 import AgentMobileRow from "./AgentMobileRow";
 import AgentDeleteDialog from "./AgentDeleteDialog";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 const EmptyState = () => (
   <div className='flex flex-col items-center justify-center p-8 text-gray-500'>
@@ -72,6 +73,7 @@ interface CurrentUser {
 }
 
 export default function Agents() {
+  const isMobile = useIsMobile();
   const [selectedAgent, setSelectedAgent] = useState<Agent | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
@@ -342,35 +344,17 @@ export default function Agents() {
               />
             )}
 
-            {/* Delete Dialogs - Desktop */}
-            <div className='hidden md:block'>
-              <AgentDeleteDialog
-                isOpen={isDeleteDialogOpen}
-                isDeletionSheetOpen={isDeletionSheetOpen}
-                agent={agentToDelete}
-                inventory={agentInventory}
-                currentUser={currentUser}
-                onOpenChange={setIsDeleteDialogOpen}
-                onDeletionSheetOpenChange={setIsDeletionSheetOpen}
-                onDelete={handleDeleteAgent}
-                isMobile={false}
-              />
-            </div>
-
-            {/* Delete Dialogs - Mobile */}
-            <div className='block md:hidden'>
-              <AgentDeleteDialog
-                isOpen={isDeleteDialogOpen}
-                isDeletionSheetOpen={isDeletionSheetOpen}
-                agent={agentToDelete}
-                inventory={agentInventory}
-                currentUser={currentUser}
-                onOpenChange={setIsDeleteDialogOpen}
-                onDeletionSheetOpenChange={setIsDeletionSheetOpen}
-                onDelete={handleDeleteAgent}
-                isMobile={true}
-              />
-            </div>
+            <AgentDeleteDialog
+              isOpen={isDeleteDialogOpen}
+              isDeletionSheetOpen={isDeletionSheetOpen}
+              agent={agentToDelete}
+              inventory={agentInventory}
+              currentUser={currentUser}
+              onOpenChange={setIsDeleteDialogOpen}
+              onDeletionSheetOpenChange={setIsDeletionSheetOpen}
+              onDelete={handleDeleteAgent}
+              isMobile={isMobile}
+            />
 
             {/* Pagination */}
             <div className='mt-4 flex justify-center'>

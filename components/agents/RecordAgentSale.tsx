@@ -348,7 +348,9 @@ export default function RecordAgentSale({
                   <PaginationPrevious
                     onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
                     className={
-                      currentPage === 1 ? "pointer-events-none opacity-50" : ""
+                      currentPage === 1
+                        ? "pointer-events-none opacity-50 cursor-pointer"
+                        : "cursor-pointer"
                     }
                   />
                 </PaginationItem>
@@ -356,7 +358,8 @@ export default function RecordAgentSale({
                   <PaginationItem key={i + 1}>
                     <PaginationLink
                       onClick={() => setCurrentPage(i + 1)}
-                      isActive={currentPage === i + 1}>
+                      isActive={currentPage === i + 1}
+                      className='cursor-pointer'>
                       {i + 1}
                     </PaginationLink>
                   </PaginationItem>
@@ -368,8 +371,8 @@ export default function RecordAgentSale({
                     }
                     className={
                       currentPage === totalPages
-                        ? "pointer-events-none opacity-50"
-                        : ""
+                        ? "pointer-events-none opacity-50 cursor-pointer"
+                        : "cursor-pointer"
                     }
                   />
                 </PaginationItem>
@@ -446,7 +449,9 @@ export default function RecordAgentSale({
                   <PaginationPrevious
                     onClick={() => setSelectedPage((p) => Math.max(1, p - 1))}
                     className={
-                      selectedPage === 1 ? "pointer-events-none opacity-50" : ""
+                      selectedPage === 1
+                        ? "pointer-events-none opacity-50 cursor-pointer"
+                        : "cursor-pointer"
                     }
                   />
                 </PaginationItem>
@@ -454,7 +459,8 @@ export default function RecordAgentSale({
                   <PaginationItem key={i + 1}>
                     <PaginationLink
                       onClick={() => setSelectedPage(i + 1)}
-                      isActive={selectedPage === i + 1}>
+                      isActive={selectedPage === i + 1}
+                      className='cursor-pointer'>
                       {i + 1}
                     </PaginationLink>
                   </PaginationItem>
@@ -468,8 +474,8 @@ export default function RecordAgentSale({
                     }
                     className={
                       selectedPage === totalSelectedPages
-                        ? "pointer-events-none opacity-50"
-                        : ""
+                        ? "pointer-events-none opacity-50 cursor-pointer"
+                        : "cursor-pointer"
                     }
                   />
                 </PaginationItem>

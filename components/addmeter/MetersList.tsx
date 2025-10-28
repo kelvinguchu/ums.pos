@@ -66,7 +66,7 @@ export const MetersList = memo(function MetersList({
                     onClick={() => onRemoveMeter(index)}
                     variant='ghost'
                     size='sm'
-                    className='hover:bg-red-100 hover:text-red-600 transition-colors'>
+                    className='hover:bg-red-100 hover:text-red-600 transition-colors cursor-pointer'>
                     <X className='h-4 w-4' />
                   </Button>
                 </TableCell>

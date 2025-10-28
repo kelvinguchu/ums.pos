@@ -142,7 +142,7 @@ export default function EditAgentDialog({
                 <Button
                   variant='outline'
                   aria-expanded={openCombobox}
-                  className='w-full justify-between bg-white border-2 border-gray-200 hover:border-primary transition-colors font-medium'>
+                  className='w-full justify-between bg-white border-2 border-gray-200 hover:border-primary transition-colors font-medium cursor-pointer'>
                   {formData.county || "Select county..."}
                   <ChevronsUpDown className='ml-2 h-4 w-4 shrink-0 opacity-50' />
                 </Button>
@@ -190,13 +190,14 @@ export default function EditAgentDialog({
               type='button'
               variant='outline'
               onClick={onClose}
-              disabled={isLoading}>
+              disabled={isLoading}
+              className='cursor-pointer'>
               Cancel
             </Button>
             <Button
               type='submit'
               disabled={isLoading}
-              className='bg-primary hover:bg-[#000066]'>
+              className='bg-primary hover:bg-[#000066] cursor-pointer'>
               {isLoading ? "Updating..." : "Update Agent"}
             </Button>
           </DialogFooter>

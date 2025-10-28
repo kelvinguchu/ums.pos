@@ -355,7 +355,7 @@ const DailyReportsPage = () => {
       <div className='mb-6 flex flex-col sm:flex-row gap-2 sm:items-center sm:justify-end'>
         <Button
           variant='outline'
-          className='flex gap-2 items-center'
+          className='flex gap-2 items-center cursor-pointer'
           onClick={handleDownloadDailyReport}
           disabled={isGeneratingDaily}>
           <Download className='h-4 w-4' />
@@ -364,7 +364,9 @@ const DailyReportsPage = () => {
 
         <Popover>
           <PopoverTrigger asChild>
-            <Button variant='outline' className='flex gap-2 items-center'>
+            <Button
+              variant='outline'
+              className='flex gap-2 items-center cursor-pointer'>
               Custom Range
             </Button>
           </PopoverTrigger>
@@ -376,7 +378,7 @@ const DailyReportsPage = () => {
                 onChange={setCustomDateRange}
               />
               <Button
-                className='w-full text-white'
+                className='w-full text-white cursor-pointer'
                 style={{ backgroundColor: "#000080" }}
                 onClick={handleCustomRangeReport}
                 disabled={isGeneratingOther}>
@@ -388,7 +390,9 @@ const DailyReportsPage = () => {
 
         <Popover>
           <PopoverTrigger asChild>
-            <Button variant='outline' className='flex gap-2 items-center'>
+            <Button
+              variant='outline'
+              className='flex gap-2 items-center cursor-pointer'>
               Specific Date
             </Button>
           </PopoverTrigger>
@@ -397,7 +401,7 @@ const DailyReportsPage = () => {
               <h4 className='font-medium leading-none'>Select Date</h4>
               <DatePicker value={specificDate} onChange={setSpecificDate} />
               <Button
-                className='w-full text-white'
+                className='w-full text-white cursor-pointer'
                 style={{ backgroundColor: "#000080" }}
                 onClick={handleSpecificDateReport}
                 disabled={isGeneratingOther}>
@@ -411,7 +415,7 @@ const DailyReportsPage = () => {
           <DropdownMenuTrigger asChild>
             <Button
               variant='outline'
-              className='flex gap-2 items-center'
+              className='flex gap-2 items-center cursor-pointer'
               disabled={isGeneratingOther}>
               {isGeneratingOther ? "Preparing..." : "Other Reports"}{" "}
               <ChevronDown className='h-4 w-4' />
@@ -419,25 +423,33 @@ const DailyReportsPage = () => {
           </DropdownMenuTrigger>
           <DropdownMenuContent align='end' className='w-56'>
             <DropdownMenuItem
-              onClick={() => handleTimeRangeReport("yesterday")}>
+              onClick={() => handleTimeRangeReport("yesterday")}
+              className='cursor-pointer'>
               Yesterday's Report
             </DropdownMenuItem>
             <DropdownMenuItem
-              onClick={() => handleTimeRangeReport("last5days")}>
+              onClick={() => handleTimeRangeReport("last5days")}
+              className='cursor-pointer'>
               Last 5 Days Report
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => handleTimeRangeReport("lastWeek")}>
+            <DropdownMenuItem
+              onClick={() => handleTimeRangeReport("lastWeek")}
+              className='cursor-pointer'>
               Last 7 Days Report
             </DropdownMenuItem>
             <DropdownMenuItem
-              onClick={() => handleTimeRangeReport("last10days")}>
+              onClick={() => handleTimeRangeReport("last10days")}
+              className='cursor-pointer'>
               Last 10 Days Report
             </DropdownMenuItem>
             <DropdownMenuItem
-              onClick={() => handleTimeRangeReport("last2weeks")}>
+              onClick={() => handleTimeRangeReport("last2weeks")}
+              className='cursor-pointer'>
               Last 2 Weeks Report
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => handleTimeRangeReport("monthly")}>
+            <DropdownMenuItem
+              onClick={() => handleTimeRangeReport("monthly")}
+              className='cursor-pointer'>
               Monthly Report
             </DropdownMenuItem>
           </DropdownMenuContent>

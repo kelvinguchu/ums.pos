@@ -15,8 +15,7 @@ const DeactivatedPage = () => {
   const router = useRouter();
 
   return (
-    <div
-      className='flex flex-col items-center justify-center min-h-screen bg-white'>
+    <div className='flex flex-col items-center justify-center min-h-screen bg-white'>
       <Image
         src='/logo.png'
         alt='logo'
@@ -44,7 +43,7 @@ const DeactivatedPage = () => {
           <Button
             variant='outline'
             onClick={() => router.push("/signin")}
-            className='mt-4'>
+            className='mt-4 cursor-pointer'>
             Back to Sign In
           </Button>
         </CardFooter>

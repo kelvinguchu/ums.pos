@@ -151,7 +151,7 @@ export default function SellMeters({ currentUser }: { currentUser: any }) {
           <div className='flex items-center gap-2'>
             <span>Serial Number Already in the Table</span>
             <button
-              className='text-blue-500 hover:underline'
+              className='text-blue-500 hover:underline cursor-pointer'
               onClick={() => {
                 const element = document.querySelector(
                   `[data-row-index="${existingIndex}"]`
@@ -426,7 +426,11 @@ export default function SellMeters({ currentUser }: { currentUser: any }) {
       <SheetHeader>
         <SheetTitle className='flex justify-between items-center pr-12'>
           <span>Sell Meters</span>
-          <Button onClick={handleClearForm} variant='outline' size='sm'>
+          <Button
+            onClick={handleClearForm}
+            variant='outline'
+            size='sm'
+            className='cursor-pointer'>
             Clear Form
           </Button>
         </SheetTitle>
@@ -453,14 +457,14 @@ export default function SellMeters({ currentUser }: { currentUser: any }) {
           <div className='mt-4 relative'>
             <Button
               onClick={handleDownloadReceipt}
-              className='w-full bg-[#2ECC40] hover:bg-[#28a035] text-white'>
+              className='w-full bg-[#2ECC40] hover:bg-[#28a035] text-white cursor-pointer'>
               Download Sales Receipt
             </Button>
             <Button
               onClick={() => setIsSubmitted(false)}
               variant='ghost'
               size='icon'
-              className='absolute -right-2 -top-2 h-6 w-6 rounded-full bg-gray-200 hover:bg-gray-300'
+              className='absolute -right-2 -top-2 h-6 w-6 rounded-full bg-gray-200 hover:bg-gray-300 cursor-pointer'
               aria-label='Dismiss'>
               <X className='h-4 w-4' />
             </Button>
@@ -519,7 +523,7 @@ export default function SellMeters({ currentUser }: { currentUser: any }) {
                     variant='ghost'
                     size='sm'
                     onClick={() => setIsDialogOpen(true)}
-                    className='ml-2 bg-yellow-500/50 to-blue-500/50 text-black'>
+                    className='ml-2 bg-yellow-500/50 to-blue-500/50 text-black cursor-pointer'>
                     <Edit2 className='h-4 w-4 mr-1' />
                     Edit Details
                   </Button>
@@ -547,7 +551,7 @@ export default function SellMeters({ currentUser }: { currentUser: any }) {
                 initialData={null}
                 meterTypes={getUniqueTypes()}
                 trigger={
-                  <Button className='w-full bg-primary hover:bg-[#000066] mb-4'>
+                  <Button className='w-full bg-primary hover:bg-[#000066] mb-4 cursor-pointer'>
                     Add Sale Details
                   </Button>
                 }
@@ -561,7 +565,7 @@ export default function SellMeters({ currentUser }: { currentUser: any }) {
                   <Button
                     onClick={handleSellMeters}
                     disabled={isSellingMeters}
-                    className='w-full bg-[#E46020] hover:bg-[#e46120] text-white'>
+                    className='w-full bg-[#E46020] hover:bg-[#e46120] text-white cursor-pointer'>
                     {isSellingMeters ? (
                       <>
                         <span className='mr-2'>Selling Meters...</span>
@@ -581,14 +585,14 @@ export default function SellMeters({ currentUser }: { currentUser: any }) {
                 <div className='space-y-4 mb-6 relative'>
                   <Button
                     onClick={handleDownloadReceipt}
-                    className='w-full bg-[#2ECC40] hover:bg-[#28a035] text-white'>
+                    className='w-full bg-[#2ECC40] hover:bg-[#28a035] text-white cursor-pointer'>
                     Download Receipt
                   </Button>
                   <Button
                     onClick={() => setIsSubmitted(false)}
                     variant='ghost'
                     size='icon'
-                    className='absolute -right-2 -top-2 h-6 w-6 rounded-full bg-gray-200 hover:bg-gray-300'
+                    className='absolute -right-2 -top-2 h-6 w-6 rounded-full bg-gray-200 hover:bg-gray-300 cursor-pointer'
                     aria-label='Dismiss'>
                     <X className='h-4 w-4' />
                   </Button>
@@ -628,7 +632,8 @@ export default function SellMeters({ currentUser }: { currentUser: any }) {
                           <Button
                             onClick={() => handleRemoveMeter(index)}
                             variant='ghost'
-                            size='sm'>
+                            size='sm'
+                            className='cursor-pointer'>
                             <X className='h-4 w-4' />
                           </Button>
                         </TableCell>

@@ -96,7 +96,7 @@ export function useMeterValidation(
               <div className='flex items-center gap-2'>
                 <span>Serial Number Already in the Table</span>
                 <button
-                  className='text-blue-500 hover:underline'
+                  className='text-blue-500 hover:underline cursor-pointer'
                   onClick={() => handleViewEntry(existingIndex)}>
                   View Entry
                 </button>

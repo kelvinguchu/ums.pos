@@ -264,7 +264,8 @@ export default function DailyReports({
                 variant='outline'
                 size='icon'
                 onClick={handleRefresh}
-                disabled={isLoading || isRefreshing}>
+                disabled={isLoading || isRefreshing}
+                className='cursor-pointer'>
                 <RefreshCw
                   className={cn(
                     "h-4 w-4 transition-transform",
@@ -288,16 +289,20 @@ export default function DailyReports({
 
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant='outline'>
+                    <Button variant='outline' className='cursor-pointer'>
                       <Download className='mr-2 h-4 w-4' />
                       Export Table as
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent>
-                    <DropdownMenuItem onClick={handleExportPDF}>
+                    <DropdownMenuItem
+                      onClick={handleExportPDF}
+                      className='cursor-pointer'>
                       PDF
                     </DropdownMenuItem>
-                    <DropdownMenuItem onClick={handleExportCSV}>
+                    <DropdownMenuItem
+                      onClick={handleExportCSV}
+                      className='cursor-pointer'>
                       CSV
                     </DropdownMenuItem>
                   </DropdownMenuContent>

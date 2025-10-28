@@ -72,25 +72,29 @@ export default function AgentDeleteDialog({
           }>
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Agent: {agent?.name}</AlertDialogTitle>
-            <AlertDialogDescription>
-              {inventory.length > 0 ? (
-                <>
+            <AlertDialogDescription asChild>
+              <div>
+                {inventory.length > 0 ? (
+                  <>
+                    <p>
+                      This agent has {inventory.length} meters in their
+                      inventory.
+                    </p>
+                    <p className='mt-2'>Choose how to proceed:</p>
+                  </>
+                ) : (
                   <p>
-                    This agent has {inventory.length} meters in their inventory.
+                    Are you sure you want to delete this agent? This action
+                    cannot be undone.
                   </p>
-                  <p className='mt-2'>Choose how to proceed:</p>
-                </>
-              ) : (
-                <p>
-                  Are you sure you want to delete this agent? This action cannot
-                  be undone.
-                </p>
-              )}
+                )}
+              </div>
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter
             className={isMobile ? "flex flex-col sm:flex-row gap-2" : ""}>
-            <AlertDialogCancel className={isMobile ? "mt-0" : ""}>
+            <AlertDialogCancel
+              className={isMobile ? "mt-0 cursor-pointer" : "cursor-pointer"}>
               Cancel
             </AlertDialogCancel>
             {inventory.length > 0 ? (
@@ -101,7 +105,11 @@ export default function AgentDeleteDialog({
                     onOpenChange(false);
                     await onDelete();
                   }}
-                  className={isMobile ? "flex-1 sm:flex-none" : ""}>
+                  className={
+                    isMobile
+                      ? "flex-1 sm:flex-none cursor-pointer"
+                      : "cursor-pointer"
+                  }>
                   Continue Delete Without Scan
                 </Button>
                 <Button
@@ -111,8 +119,8 @@ export default function AgentDeleteDialog({
                   }}
                   className={
                     isMobile
-                      ? "bg-primary hover:bg-[#000066] flex-1 sm:flex-none"
-                      : "bg-primary hover:bg-[#000066]"
+                      ? "bg-primary hover:bg-[#000066] flex-1 sm:flex-none cursor-pointer"
+                      : "bg-primary hover:bg-[#000066] cursor-pointer"
                   }>
                   Scan To Delete
                 </Button>
@@ -120,7 +128,7 @@ export default function AgentDeleteDialog({
             ) : (
               <AlertDialogAction
                 onClick={async () => await onDelete()}
-                className='bg-red-600 hover:bg-red-700'>
+                className='bg-red-600 hover:bg-red-700 cursor-pointer'>
                 Delete
               </AlertDialogAction>
             )}

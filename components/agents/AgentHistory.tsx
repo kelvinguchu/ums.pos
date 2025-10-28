@@ -143,7 +143,7 @@ export default function AgentHistory() {
             variant='outline'
             size='sm'
             onClick={handleRefresh}
-            className='gap-2'
+            className='gap-2 cursor-pointer'
             disabled={isRefreshing}>
             <RefreshCw
               className={cn(
@@ -256,6 +256,7 @@ export default function AgentHistory() {
                     setCurrentPage((prev) => Math.max(prev - 1, 1))
                   }
                   className={cn(
+                    "cursor-pointer",
                     currentPage === 1 && "pointer-events-none opacity-50"
                   )}
                 />
@@ -272,7 +273,8 @@ export default function AgentHistory() {
                     <PaginationItem key={page}>
                       <PaginationLink
                         onClick={() => setCurrentPage(page)}
-                        isActive={page === currentPage}>
+                        isActive={page === currentPage}
+                        className='cursor-pointer'>
                         {page}
                       </PaginationLink>
                     </PaginationItem>
@@ -296,6 +298,7 @@ export default function AgentHistory() {
                     )
                   }
                   className={cn(
+                    "cursor-pointer",
                     currentPage === pagination.totalPages &&
                       "pointer-events-none opacity-50"
                   )}

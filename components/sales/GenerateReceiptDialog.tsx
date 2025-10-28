@@ -153,7 +153,7 @@ export default function GenerateReceiptDialog({
       }}>
       <DialogTrigger asChild>
         {trigger || (
-          <Button variant='outline' className='gap-2'>
+          <Button variant='outline' className='gap-2 cursor-pointer'>
             <FileText className='h-4 w-4' />
             Generate Past Receipt
           </Button>
@@ -181,7 +181,7 @@ export default function GenerateReceiptDialog({
                 size='sm'
                 onClick={handleSearch}
                 disabled={isLoading}
-                className='absolute right-1.5 top-1/2 -translate-y-1/2 h-7 px-2.5 bg-primary hover:bg-[#000066] text-white'>
+                className='absolute right-1.5 top-1/2 -translate-y-1/2 h-7 px-2.5 bg-primary hover:bg-[#000066] text-white cursor-pointer'>
                 {isLoading ? (
                   <Loader2 className='h-4 w-4 animate-spin' />
                 ) : (
@@ -251,13 +251,14 @@ export default function GenerateReceiptDialog({
               <Button
                 variant='outline'
                 onClick={handleReset}
-                disabled={isDownloading}>
+                disabled={isDownloading}
+                className='cursor-pointer'>
                 Reset
               </Button>
               <Button
                 onClick={handleDownloadReceipt}
                 disabled={isDownloading}
-                className='gap-2 bg-primary hover:bg-[#000066] text-white'>
+                className='gap-2 bg-primary hover:bg-[#000066] text-white cursor-pointer'>
                 {isDownloading ? (
                   <>
                     <Loader2 className='h-4 w-4 animate-spin' />
@@ -272,7 +273,10 @@ export default function GenerateReceiptDialog({
               </Button>
             </div>
           ) : (
-            <Button variant='outline' onClick={() => setOpen(false)}>
+            <Button
+              variant='outline'
+              onClick={() => setOpen(false)}
+              className='cursor-pointer'>
               Cancel
             </Button>
           )}

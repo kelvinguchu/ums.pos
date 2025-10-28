@@ -64,7 +64,7 @@ export function UserProfileMenu({
         <PopoverTrigger asChild>
           <Button
             variant='ghost'
-            className='relative flex items-center gap-2 rounded-full px-3 py-2 bg-gradient-to-r from-primary/10 to-blue-500/10 hover:from-primary/20 hover:to-blue-500/20 transition-all duration-200'
+            className='relative flex items-center gap-2 rounded-full px-3 py-2 bg-gradient-to-r from-primary/10 to-blue-500/10 hover:from-primary/20 hover:to-blue-500/20 transition-all duration-200 cursor-pointer'
             id='user-profile-button'>
             <User className='h-4 w-4 text-primary' />
             <span className='text-sm font-medium text-primary'>
@@ -86,7 +86,7 @@ export function UserProfileMenu({
 
             <Button
               variant='outline'
-              className='w-full justify-start'
+              className='w-full justify-start cursor-pointer'
               onClick={() => setShowChangePasswordDialog(true)}>
               <Edit2 className='mr-2 h-4 w-4' />
               Change Password
@@ -94,7 +94,7 @@ export function UserProfileMenu({
 
             <Button
               variant='outline'
-              className='w-full justify-start text-red-600 hover:text-red-700 hover:bg-red-50'
+              className='w-full justify-start text-red-600 hover:text-red-700 hover:bg-red-50 cursor-pointer'
               onClick={handleLogout}
               disabled={isLoading}>
               <LogOut className='mr-2 h-4 w-4' />

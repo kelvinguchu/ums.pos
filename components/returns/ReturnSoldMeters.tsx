@@ -289,7 +289,7 @@ export default function ReturnSoldMeters({
             <>
               <Button
                 onClick={handleReturnMeters}
-                className='w-full bg-primary hover:bg-[#000066] text-white'
+                className='w-full bg-primary hover:bg-[#000066] text-white cursor-pointer'
                 disabled={isSubmitting}>
                 {isSubmitting ? (
                   <>
@@ -388,7 +388,8 @@ export default function ReturnSoldMeters({
                                       setReplacementSerial("");
                                     }}
                                     variant='outline'
-                                    size='sm'>
+                                    size='sm'
+                                    className='cursor-pointer'>
                                     Replace
                                   </Button>
                                 </div>
@@ -405,7 +406,7 @@ export default function ReturnSoldMeters({
                               onClick={() => handleRemoveMeter(index)}
                               variant='ghost'
                               size='sm'
-                              className='hover:bg-red-100'>
+                              className='hover:bg-red-100 cursor-pointer'>
                               <X className='h-4 w-4 text-red-500' />
                             </Button>
                           </TableCell>

@@ -75,7 +75,7 @@ export function BatchDetailsSection({
               variant='ghost'
               size='sm'
               onClick={() => onDialogOpenChange(true)}
-              className='ml-2 bg-yellow-500/50 to-blue-500/50 text-black'>
+              className='ml-2 bg-yellow-500/50 to-blue-500/50 text-black cursor-pointer'>
               <Edit2 className='h-4 w-4 mr-1' />
               Edit Details
             </Button>
@@ -83,7 +83,7 @@ export function BatchDetailsSection({
 
           <Button
             onClick={onFinalSubmit}
-            className='w-full bg-[#E46020] hover:bg-[#e46120] text-white'
+            className='w-full bg-[#E46020] hover:bg-[#e46120] text-white cursor-pointer'
             disabled={isSubmitting}>
             {isSubmitting ? (
               <>
@@ -98,7 +98,7 @@ export function BatchDetailsSection({
       ) : (
         <Button
           onClick={() => onDialogOpenChange(true)}
-          className='w-full bg-primary hover:bg-[#000066] mb-4'>
+          className='w-full bg-primary hover:bg-[#000066] mb-4 cursor-pointer'>
           Add Purchase Details
         </Button>
       )}

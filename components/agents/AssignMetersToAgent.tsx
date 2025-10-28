@@ -287,7 +287,7 @@ export default function AssignMetersToAgent({
                   <Button
                     variant='outline'
                     aria-label='Select agent'
-                    className='w-full justify-between'>
+                    className='w-full justify-between cursor-pointer'>
                     {selectedAgent
                       ? agents.find((a) => a.id === selectedAgent)?.name
                       : "Select Agent"}
@@ -369,14 +369,14 @@ export default function AssignMetersToAgent({
             <div className='mb-6 relative'>
               <Button
                 onClick={handleDownloadReceipt}
-                className='w-full bg-[#2ECC40] hover:bg-[#28a035] text-white'>
+                className='w-full bg-[#2ECC40] hover:bg-[#28a035] text-white cursor-pointer'>
                 Download Assignment Receipt
               </Button>
               <Button
                 onClick={() => setIsSubmitted(false)}
                 variant='ghost'
                 size='icon'
-                className='absolute -right-2 -top-2 h-6 w-6 rounded-full bg-gray-200 hover:bg-gray-300'
+                className='absolute -right-2 -top-2 h-6 w-6 rounded-full bg-gray-200 hover:bg-gray-300 cursor-pointer'
                 aria-label='Dismiss'>
                 <X className='h-4 w-4' />
               </Button>
@@ -387,7 +387,7 @@ export default function AssignMetersToAgent({
             <>
               <Button
                 onClick={handleAssignMeters}
-                className='w-full bg-primary hover:bg-[#000066] text-white mb-6'
+                className='w-full bg-primary hover:bg-[#000066] text-white mb-6 cursor-pointer'
                 disabled={isAssigning}>
                 {isAssigning ? (
                   <>
@@ -426,7 +426,7 @@ export default function AssignMetersToAgent({
                             variant='ghost'
                             size='icon'
                             onClick={() => handleRemoveMeter(index)}
-                            className='h-8 w-8 text-red-500 hover:text-red-700 hover:bg-red-100'>
+                            className='h-8 w-8 text-red-500 hover:text-red-700 hover:bg-red-100 cursor-pointer'>
                             <X className='h-4 w-4' />
                           </Button>
                         </TableCell>

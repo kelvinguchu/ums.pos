@@ -200,7 +200,7 @@ export default function FaultyMetersView() {
             onClick={handleRefresh}
             disabled={isLoading || isRefreshing || isUpdating}
             aria-label='Refresh faulty meters data'
-            className='hover:bg-gray-100'>
+            className='hover:bg-gray-100 cursor-pointer'>
             <RefreshCw
               className={cn(
                 "h-4 w-4 transition-transform",
@@ -233,7 +233,7 @@ export default function FaultyMetersView() {
                 <Select
                   value={selectedStatus}
                   onValueChange={setSelectedStatus}>
-                  <SelectTrigger className='w-[140px]'>
+                  <SelectTrigger className='w-[140px] cursor-pointer'>
                     <SelectValue>Status</SelectValue>
                   </SelectTrigger>
                   <SelectContent>
@@ -253,7 +253,7 @@ export default function FaultyMetersView() {
                     variant='ghost'
                     size='icon'
                     onClick={clearFilters}
-                    className='text-muted-foreground hover:text-foreground'>
+                    className='text-muted-foreground hover:text-foreground cursor-pointer'>
                     <X className='h-4 w-4' />
                   </Button>
                 )}
@@ -297,7 +297,7 @@ export default function FaultyMetersView() {
                               <DialogTrigger asChild>
                                 <Button
                                   variant='outline'
-                                  className='w-full justify-start'
+                                  className='w-full justify-start cursor-pointer'
                                   disabled={isUpdating}>
                                   <span
                                     className={cn(
@@ -324,7 +324,7 @@ export default function FaultyMetersView() {
                                 <div className='grid gap-3 py-4'>
                                   <Button
                                     variant='outline'
-                                    className='justify-start'
+                                    className='justify-start cursor-pointer'
                                     onClick={() =>
                                       handleStatusUpdate(meter, "repaired")
                                     }
@@ -339,7 +339,7 @@ export default function FaultyMetersView() {
                                   </Button>
                                   <Button
                                     variant='outline'
-                                    className='justify-start'
+                                    className='justify-start cursor-pointer'
                                     onClick={() =>
                                       handleStatusUpdate(meter, "unrepairable")
                                     }
@@ -355,7 +355,7 @@ export default function FaultyMetersView() {
                                   </Button>
                                   <Button
                                     variant='outline'
-                                    className='justify-start'
+                                    className='justify-start cursor-pointer'
                                     onClick={() =>
                                       handleStatusUpdate(meter, "pending")
                                     }
@@ -390,7 +390,7 @@ export default function FaultyMetersView() {
                             className={
                               currentPage === 1
                                 ? "pointer-events-none opacity-50"
-                                : ""
+                                : "cursor-pointer"
                             }
                           />
                         </PaginationItem>
@@ -413,7 +413,8 @@ export default function FaultyMetersView() {
                               <PaginationItem>
                                 <PaginationLink
                                   onClick={() => setCurrentPage(page)}
-                                  isActive={currentPage === page}>
+                                  isActive={currentPage === page}
+                                  className='cursor-pointer'>
                                   {page}
                                 </PaginationLink>
                               </PaginationItem>
@@ -430,7 +431,7 @@ export default function FaultyMetersView() {
                             className={
                               currentPage === totalPages
                                 ? "pointer-events-none opacity-50"
-                                : ""
+                                : "cursor-pointer"
                             }
                           />
                         </PaginationItem>

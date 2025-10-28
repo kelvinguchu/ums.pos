@@ -188,7 +188,7 @@ export default function BatchDetailsDialog({
 
           <Button
             type='submit'
-            className='w-full bg-primary hover:bg-[#000066] text-white'>
+            className='w-full bg-primary hover:bg-[#000066] text-white cursor-pointer'>
             Save Batch Details
           </Button>
         </form>

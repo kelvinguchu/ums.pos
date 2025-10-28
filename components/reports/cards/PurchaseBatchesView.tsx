@@ -201,7 +201,7 @@ export default function PurchaseBatchesView() {
             onClick={handleRefresh}
             disabled={isLoading || isRefreshing}
             aria-label='Refresh purchase batch data'
-            className='hover:bg-gray-100'>
+            className='hover:bg-gray-100 cursor-pointer'>
             <RefreshCw
               className={cn(
                 "h-4 w-4 transition-transform",
@@ -243,7 +243,7 @@ export default function PurchaseBatchesView() {
                       setSelectedType(value);
                       setCurrentPage(1);
                     }}>
-                    <SelectTrigger className='w-[140px]'>
+                    <SelectTrigger className='w-[140px] cursor-pointer'>
                       <SelectValue placeholder='Meter Type' />
                     </SelectTrigger>
                     <SelectContent>
@@ -263,7 +263,7 @@ export default function PurchaseBatchesView() {
                     <PopoverTrigger asChild>
                       <Button
                         variant='outline'
-                        className='w-[200px] justify-start text-left font-normal'>
+                        className='w-[200px] justify-start text-left font-normal cursor-pointer'>
                         <CalendarIcon className='mr-2 h-4 w-4' />
                         {selectedDate ? (
                           format(selectedDate, "PPP")
@@ -291,7 +291,7 @@ export default function PurchaseBatchesView() {
                       variant='ghost'
                       size='icon'
                       onClick={clearFilters}
-                      className='text-muted-foreground hover:text-foreground'>
+                      className='text-muted-foreground hover:text-foreground cursor-pointer'>
                       <X className='h-4 w-4' />
                     </Button>
                   )}
@@ -398,8 +398,8 @@ export default function PurchaseBatchesView() {
                       }
                       className={
                         currentPage === 1
-                          ? "pointer-events-none opacity-50"
-                          : ""
+                          ? "pointer-events-none opacity-50 cursor-pointer"
+                          : "cursor-pointer"
                       }
                     />
                   </PaginationItem>
@@ -421,7 +421,8 @@ export default function PurchaseBatchesView() {
                         <PaginationItem>
                           <PaginationLink
                             onClick={() => setCurrentPage(page)}
-                            isActive={currentPage === page}>
+                            isActive={currentPage === page}
+                            className='cursor-pointer'>
                             {page}
                           </PaginationLink>
                         </PaginationItem>
@@ -435,8 +436,8 @@ export default function PurchaseBatchesView() {
                       }
                       className={
                         currentPage === totalPages
-                          ? "pointer-events-none opacity-50"
-                          : ""
+                          ? "pointer-events-none opacity-50 cursor-pointer"
+                          : "cursor-pointer"
                       }
                     />
                   </PaginationItem>

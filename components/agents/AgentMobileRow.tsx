@@ -60,7 +60,7 @@ export default function AgentMobileRow({
       <TableCell className='text-center'>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant='ghost' size='sm'>
+            <Button variant='ghost' size='sm' className='cursor-pointer'>
               <Info className='h-4 w-4 text-primary' />
             </Button>
           </DropdownMenuTrigger>

@@ -1,4 +1,4 @@
-import { memo } from 'react';
+import { memo } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Search, X } from "lucide-react";
@@ -17,7 +17,7 @@ export const DailyReportsFilters = memo(function DailyReportsFilters({
   onSearchChange,
   onTypeChange,
   onClearFilters,
-  hasActiveFilters
+  hasActiveFilters,
 }: FiltersProps) {
   return (
     <div className='flex flex-col sm:flex-row gap-4 mb-2 justify-between'>
@@ -33,26 +33,22 @@ export const DailyReportsFilters = memo(function DailyReportsFilters({
           />
         </div>
 
-        <Select 
-          value={selectedType}
-          onValueChange={onTypeChange}
-        >
-          <SelectTrigger className="w-[180px]">
+        <Select value={selectedType} onValueChange={onTypeChange}>
+          <SelectTrigger className='w-[180px] cursor-pointer'>
             <SelectValue>
               {selectedType === "all"
                 ? "All Types"
-                : selectedType.charAt(0).toUpperCase() +
-                  selectedType.slice(1)}
+                : selectedType.charAt(0).toUpperCase() + selectedType.slice(1)}
             </SelectValue>
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All Types</SelectItem>
-            <SelectItem value="split">Split</SelectItem>
-            <SelectItem value="integrated">Integrated</SelectItem>
-            <SelectItem value="gas">Gas</SelectItem>
-            <SelectItem value="water">Water</SelectItem>
-            <SelectItem value="3 phase">3 Phase</SelectItem>
-            <SelectItem value="smart">Smart</SelectItem>
+            <SelectItem value='all'>All Types</SelectItem>
+            <SelectItem value='split'>Split</SelectItem>
+            <SelectItem value='integrated'>Integrated</SelectItem>
+            <SelectItem value='gas'>Gas</SelectItem>
+            <SelectItem value='water'>Water</SelectItem>
+            <SelectItem value='3 phase'>3 Phase</SelectItem>
+            <SelectItem value='smart'>Smart</SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -62,11 +58,11 @@ export const DailyReportsFilters = memo(function DailyReportsFilters({
           variant='outline'
           size='sm'
           onClick={onClearFilters}
-          className='text-muted-foreground hover:text-foreground'>
+          className='text-muted-foreground hover:text-foreground cursor-pointer'>
           Clear filters
           <X className='ml-2 h-4 w-4' />
         </Button>
       )}
     </div>
   );
-}); 
+});

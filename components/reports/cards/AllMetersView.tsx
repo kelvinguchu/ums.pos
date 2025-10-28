@@ -557,7 +557,8 @@ const AllMetersView: React.FC = () => {
               variant='outline'
               onClick={handleRefresh}
               disabled={isLoading || isRefreshing}
-              aria-label='Refresh meter data'>
+              aria-label='Refresh meter data'
+              className='cursor-pointer'>
               <RefreshCw
                 className={cn(
                   "h-4 w-4 mr-2 transition-transform",
@@ -583,7 +584,7 @@ const AllMetersView: React.FC = () => {
                 {searchInput && (
                   <button
                     onClick={clearSearch}
-                    className='absolute right-2 top-2.5 text-gray-400 hover:text-gray-600'>
+                    className='absolute right-2 top-2.5 text-gray-400 hover:text-gray-600 cursor-pointer'>
                     <X className='h-4 w-4' />
                   </button>
                 )}
@@ -611,7 +612,7 @@ const AllMetersView: React.FC = () => {
                         {searchResults.map((result: any) => (
                           <div
                             key={result.serial_number}
-                            className='flex flex-col p-3 hover:bg-gray-50 rounded-md gap-2 border-b last:border-0'
+                            className='flex flex-col p-3 hover:bg-gray-50 rounded-md gap-2 border-b last:border-0 cursor-pointer'
                             onClick={() => {
                               // Set the filter to match this meter's status
                               filters.handleStatusFilterChange(
@@ -723,7 +724,7 @@ const AllMetersView: React.FC = () => {
               size='sm'
               onClick={handleExportCSV}
               disabled={isExporting || isLoading}
-              className='ml-2'>
+              className='ml-2 cursor-pointer'>
               {isExporting ? (
                 <>
                   <span className='animate-spin mr-2'>⏳</span>
@@ -745,11 +746,21 @@ const AllMetersView: React.FC = () => {
           }}>
           <div className='flex justify-between items-center mb-4'>
             <TabsList>
-              <TabsTrigger value='in_stock'>In Stock</TabsTrigger>
-              <TabsTrigger value='with_agent'>With Agent</TabsTrigger>
-              <TabsTrigger value='sold'>Sold</TabsTrigger>
-              <TabsTrigger value='replaced'>Replaced</TabsTrigger>
-              <TabsTrigger value='faulty'>Faulty</TabsTrigger>
+              <TabsTrigger value='in_stock' className='cursor-pointer'>
+                In Stock
+              </TabsTrigger>
+              <TabsTrigger value='with_agent' className='cursor-pointer'>
+                With Agent
+              </TabsTrigger>
+              <TabsTrigger value='sold' className='cursor-pointer'>
+                Sold
+              </TabsTrigger>
+              <TabsTrigger value='replaced' className='cursor-pointer'>
+                Replaced
+              </TabsTrigger>
+              <TabsTrigger value='faulty' className='cursor-pointer'>
+                Faulty
+              </TabsTrigger>
             </TabsList>
 
             <Select
@@ -757,7 +768,7 @@ const AllMetersView: React.FC = () => {
               onValueChange={(value) => {
                 filters.handleTypeFilterChange(value || null);
               }}>
-              <SelectTrigger className='w-[150px]'>
+              <SelectTrigger className='w-[150px] cursor-pointer'>
                 <SelectValue placeholder='All Types' />
               </SelectTrigger>
               <SelectContent>
@@ -803,7 +814,7 @@ const AllMetersView: React.FC = () => {
                     <Button
                       variant='outline'
                       size='sm'
-                      className='mt-2'
+                      className='mt-2 cursor-pointer'
                       onClick={() => refetch()}>
                       Retry
                     </Button>
@@ -881,7 +892,7 @@ const AllMetersView: React.FC = () => {
                             className={
                               pagination.page === 1
                                 ? "opacity-50 pointer-events-none"
-                                : ""
+                                : "cursor-pointer"
                             }
                           />
                         </PaginationItem>
@@ -890,7 +901,8 @@ const AllMetersView: React.FC = () => {
                         {pagination.page > 2 && (
                           <PaginationItem>
                             <PaginationLink
-                              onClick={() => pagination.handlePageChange(1)}>
+                              onClick={() => pagination.handlePageChange(1)}
+                              className='cursor-pointer'>
                               1
                             </PaginationLink>
                           </PaginationItem>
@@ -909,7 +921,8 @@ const AllMetersView: React.FC = () => {
                             <PaginationLink
                               onClick={() =>
                                 pagination.handlePageChange(pagination.page - 1)
-                              }>
+                              }
+                              className='cursor-pointer'>
                               {pagination.page - 1}
                             </PaginationLink>
                           </PaginationItem>
@@ -928,7 +941,8 @@ const AllMetersView: React.FC = () => {
                             <PaginationLink
                               onClick={() =>
                                 pagination.handlePageChange(pagination.page + 1)
-                              }>
+                              }
+                              className='cursor-pointer'>
                               {pagination.page + 1}
                             </PaginationLink>
                           </PaginationItem>
@@ -949,7 +963,8 @@ const AllMetersView: React.FC = () => {
                                 pagination.handlePageChange(
                                   pagination.totalPages
                                 )
-                              }>
+                              }
+                              className='cursor-pointer'>
                               {pagination.totalPages}
                             </PaginationLink>
                           </PaginationItem>
@@ -963,7 +978,7 @@ const AllMetersView: React.FC = () => {
                             className={
                               pagination.page === pagination.totalPages
                                 ? "opacity-50 pointer-events-none"
-                                : ""
+                                : "cursor-pointer"
                             }
                           />
                         </PaginationItem>

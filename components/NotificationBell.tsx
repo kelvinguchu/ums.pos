@@ -106,7 +106,7 @@ function NotificationList({
         <Button
           variant='outline'
           size='icon'
-          className='h-8 w-8 rounded-full fixed bottom-4 right-4 z-50 bg-white shadow-md hover:bg-gray-50 border-gray-200'
+          className='h-8 w-8 rounded-full fixed bottom-4 right-4 z-50 bg-white shadow-md hover:bg-gray-50 border-gray-200 cursor-pointer'
           onClick={onScrollToTop}
           title='Scroll to top'>
           <MoveUp className='h-4 w-4 text-gray-700' />
@@ -311,7 +311,9 @@ export function NotificationBell() {
         <Button
           variant='ghost'
           size='icon'
-          className={`relative ${isMobile ? "w-full cursor-pointer justify-start" : ""}`}>
+          className={`relative cursor-pointer ${
+            isMobile ? "w-full justify-start" : ""
+          }`}>
           <Bell className={`h-5 w-5 ${isMobile ? "mr-2" : ""}`} />
           {isMobile && <span>Notifications</span>}
           {unreadCount > 0 && (

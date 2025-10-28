@@ -151,7 +151,10 @@ export default function MeterSales() {
     return (
       <div className='flex flex-col items-center justify-center min-h-[60vh] gap-4'>
         <div className='text-lg text-red-500'>Error: {error?.message}</div>
-        <Button onClick={() => refetch()} variant='outline'>
+        <Button
+          onClick={() => refetch()}
+          variant='outline'
+          className='cursor-pointer'>
           <RefreshCw className='mr-2 h-4 w-4' />
           Retry
         </Button>
@@ -290,7 +293,7 @@ export default function MeterSales() {
               onValueChange={(value) =>
                 setSelectedType(value === "all" ? null : value)
               }>
-              <SelectTrigger className='w-[140px]'>
+              <SelectTrigger className='w-[140px] cursor-pointer'>
                 <SelectValue placeholder='Meter Type' />
               </SelectTrigger>
               <SelectContent>
@@ -309,7 +312,7 @@ export default function MeterSales() {
               onValueChange={(value) =>
                 setSelectedCustomerType(value === "all" ? null : value)
               }>
-              <SelectTrigger className='w-[140px]'>
+              <SelectTrigger className='w-[140px] cursor-pointer'>
                 <SelectValue placeholder='Customer Type' />
               </SelectTrigger>
               <SelectContent>
@@ -341,7 +344,10 @@ export default function MeterSales() {
             <div className='flex items-center gap-2 ml-auto'>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant='outline' size='sm'>
+                  <Button
+                    variant='outline'
+                    size='sm'
+                    className='cursor-pointer'>
                     <Download className='mr-2 h-4 w-4' />
                     Export
                   </Button>
@@ -361,7 +367,7 @@ export default function MeterSales() {
                   variant='ghost'
                   size='icon'
                   onClick={clearSearch}
-                  className='text-muted-foreground hover:text-foreground'>
+                  className='text-muted-foreground hover:text-foreground cursor-pointer'>
                   <X className='h-4 w-4' />
                 </Button>
               )}
@@ -381,7 +387,7 @@ export default function MeterSales() {
                 variant='outline'
                 size='icon'
                 onClick={handleRefresh}
-                className='hover:bg-gray-100'
+                className='hover:bg-gray-100 cursor-pointer'
                 disabled={isLoading || isRefreshing}
                 aria-label='Refresh sales data'>
                 <RefreshCw
@@ -402,7 +408,7 @@ export default function MeterSales() {
                 {currentBatches.map((batch) => (
                   <div
                     key={batch.id}
-                    className='bg-white p-4 rounded-lg border shadow-sm space-y-2'
+                    className='bg-white p-4 rounded-lg border shadow-sm space-y-2 cursor-pointer'
                     onClick={() => setSelectedBatch(batch.id)}>
                     <div className='flex justify-between items-start'>
                       <div>
@@ -523,6 +529,11 @@ export default function MeterSales() {
               <PaginationPrevious
                 onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
                 isActive={currentPage !== 1}
+                className={
+                  currentPage === 1
+                    ? "opacity-50 pointer-events-none"
+                    : "cursor-pointer"
+                }
               />
             </PaginationItem>
 
@@ -543,7 +554,8 @@ export default function MeterSales() {
                   <PaginationItem>
                     <PaginationLink
                       onClick={() => setCurrentPage(page)}
-                      isActive={page === currentPage}>
+                      isActive={page === currentPage}
+                      className='cursor-pointer'>
                       {page}
                     </PaginationLink>
                   </PaginationItem>
@@ -556,6 +568,11 @@ export default function MeterSales() {
                   setCurrentPage((p) => Math.min(totalPages, p + 1))
                 }
                 isActive={currentPage !== totalPages}
+                className={
+                  currentPage === totalPages
+                    ? "opacity-50 pointer-events-none"
+                    : "cursor-pointer"
+                }
               />
             </PaginationItem>
           </PaginationContent>

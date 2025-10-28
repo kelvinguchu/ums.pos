@@ -100,10 +100,14 @@ export function AddNoteDialog({
               type='button'
               variant='outline'
               onClick={() => onOpenChange(false)}
-              disabled={isSubmitting}>
+              disabled={isSubmitting}
+              className='cursor-pointer'>
               Cancel
             </Button>
-            <Button type='submit' disabled={isSubmitting}>
+            <Button
+              type='submit'
+              disabled={isSubmitting}
+              className='cursor-pointer'>
               {isSubmitting && (
                 <Loader2 className='mr-2 h-4 w-4 animate-spin' />
               )}

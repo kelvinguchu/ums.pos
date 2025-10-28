@@ -77,7 +77,7 @@ export default function AgentActionsMenu({
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant='ghost' className='h-8 w-8 p-0'>
+        <Button variant='ghost' className='h-8 w-8 p-0 cursor-pointer'>
           <MoreVertical className='h-4 w-4' />
         </Button>
       </DropdownMenuTrigger>
@@ -85,18 +85,20 @@ export default function AgentActionsMenu({
         {/* View Inventory - Available to all users */}
         <Sheet>
           <SheetTrigger asChild>
-            <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+            <DropdownMenuItem
+              className='cursor-pointer'
+              onSelect={(e) => e.preventDefault()}>
               <ClipboardList className='mr-2 h-4 w-4 text-primary' />
               View Inventory
             </DropdownMenuItem>
           </SheetTrigger>
-          <SheetContent className='w-full sm:min-w-[50vw] bg-gray-50 border-l border-gray-200 px-2 overflow-y-auto'>
-            <SheetHeader>
+          <SheetContent className='w-full sm:min-w-[50vw] bg-gray-50 border-l border-gray-200 px-0 gap-0'>
+            <SheetHeader className='px-6 pb-4 pt-2 border-b border-gray-200 bg-gray-100/60'>
               <SheetTitle className='text-center'>
                 Agent Inventory - {agent.name}
               </SheetTitle>
             </SheetHeader>
-            <div className='mt-4 h-[calc(100vh-120px)] overflow-y-auto'>
+            <div className='flex-1 overflow-y-auto px-6 py-4'>
               <AgentInventory agentId={agent.id} />
             </div>
           </SheetContent>
@@ -109,6 +111,7 @@ export default function AgentActionsMenu({
 
             {/* Edit Agent */}
             <DropdownMenuItem
+              className='cursor-pointer'
               onSelect={(e) => {
                 e.preventDefault();
                 onEdit(agent);
@@ -120,7 +123,9 @@ export default function AgentActionsMenu({
             {/* Record Sale */}
             <Drawer>
               <DrawerTrigger asChild>
-                <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                <DropdownMenuItem
+                  className='cursor-pointer'
+                  onSelect={(e) => e.preventDefault()}>
                   <DollarSign className='mr-2 h-4 w-4 text-[#E46020]' />
                   Record Sale
                 </DropdownMenuItem>
@@ -147,13 +152,15 @@ export default function AgentActionsMenu({
             {/* Assign Meters */}
             <Sheet>
               <SheetTrigger asChild>
-                <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                <DropdownMenuItem
+                  className='cursor-pointer'
+                  onSelect={(e) => e.preventDefault()}>
                   <PlusCircle className='mr-2 h-4 w-4 text-primary' />
                   Assign Meters
                 </DropdownMenuItem>
               </SheetTrigger>
-              <SheetContent className='min-w-[50vw] bg-gray-50 border-l border-gray-200 px-2'>
-                <SheetHeader>
+              <SheetContent className='min-w-[50vw] bg-gray-50 border-l border-gray-200 px-0 gap-0'>
+                <SheetHeader className='px-6 pb-4 pt-2 border-b border-gray-200 bg-gray-100/60'>
                   <SheetTitle className='flex items-center justify-center gap-2'>
                     <Badge
                       variant='outline'
@@ -162,23 +169,27 @@ export default function AgentActionsMenu({
                     </Badge>
                   </SheetTitle>
                 </SheetHeader>
-                <AssignMetersToAgent
-                  currentUser={currentUser}
-                  preSelectedAgent={agent}
-                />
+                <div className='flex-1 overflow-y-auto px-6 py-4'>
+                  <AssignMetersToAgent
+                    currentUser={currentUser}
+                    preSelectedAgent={agent}
+                  />
+                </div>
               </SheetContent>
             </Sheet>
 
             {/* Return Meters */}
             <Sheet>
               <SheetTrigger asChild>
-                <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                <DropdownMenuItem
+                  className='cursor-pointer'
+                  onSelect={(e) => e.preventDefault()}>
                   <ArrowLeftCircle className='mr-2 h-4 w-4 text-[#E46020]' />
                   Return Meters
                 </DropdownMenuItem>
               </SheetTrigger>
-              <SheetContent className='min-w-[50vw] bg-gray-50 border-l border-gray-200 px-2'>
-                <SheetHeader>
+              <SheetContent className='min-w-[50vw] bg-gray-50 border-l border-gray-200 px-0 gap-0'>
+                <SheetHeader className='px-6 pb-4 pt-2 border-b border-gray-200 bg-gray-100/60'>
                   <SheetTitle className='flex items-center justify-center gap-2'>
                     <Badge
                       variant='outline'
@@ -187,20 +198,24 @@ export default function AgentActionsMenu({
                     </Badge>
                   </SheetTitle>
                 </SheetHeader>
-                {currentUser && (
-                  <ReturnMetersFromAgent
-                    agent={agent}
-                    currentUser={{
-                      id: currentUser.id,
-                      name: currentUser.name || undefined,
-                    }}
-                  />
-                )}
+                <div className='flex-1 overflow-y-auto px-6 py-4'>
+                  {currentUser && (
+                    <ReturnMetersFromAgent
+                      agent={agent}
+                      currentUser={{
+                        id: currentUser.id,
+                        name: currentUser.name || undefined,
+                      }}
+                    />
+                  )}
+                </div>
               </SheetContent>
             </Sheet>
 
             {/* Toggle Status */}
-            <DropdownMenuItem onClick={() => onToggleStatus(agent)}>
+            <DropdownMenuItem
+              className='cursor-pointer'
+              onClick={() => onToggleStatus(agent)}>
               {agent.is_active ? (
                 <>
                   <UserMinus className='mr-2 h-4 w-4 text-red-500' />
@@ -216,7 +231,7 @@ export default function AgentActionsMenu({
 
             {/* Delete Agent */}
             <DropdownMenuItem
-              className='text-red-600'
+              className='text-red-600 cursor-pointer'
               onSelect={(e) => {
                 e.preventDefault();
                 onDelete(agent);

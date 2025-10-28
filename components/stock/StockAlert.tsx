@@ -139,95 +139,107 @@ export function StockAlert() {
   return (
     <Sheet open={isOpen} onOpenChange={setIsOpen}>
       <SheetTrigger asChild>
-        <Button variant='ghost' size='icon' className='relative'>
+        <Button variant='ghost' size='icon' className='relative cursor-pointer'>
           <AlertCircle className='h-5 w-5' />
           {hasLowStock && (
             <span className='absolute top-0 right-0 h-2 w-2 rounded-full bg-red-500' />
           )}
         </Button>
       </SheetTrigger>
-      <SheetContent className='min-w-[90vw] lg:min-w-[35vw] bg-gray-50 border-l border-gray-200 px-2'>
-        <SheetHeader>
+      <SheetContent className='min-w-[90vw] lg:min-w-[35vw] bg-gray-50 border-l border-gray-200 px-2 gap-0'>
+        <SheetHeader className='px-6 pb-4 pt-2 border-b border-gray-200 bg-gray-100/60'>
           <SheetTitle>Stock Alerts</SheetTitle>
         </SheetHeader>
 
-        <Tabs defaultValue='alerts' className='mt-6'>
-          <TabsList>
-            <TabsTrigger value='alerts'>Alerts</TabsTrigger>
-            <TabsTrigger value='settings'>Settings</TabsTrigger>
-          </TabsList>
+        <div className='flex-1 overflow-y-auto px-6 py-4'>
+          <Tabs defaultValue='alerts' className='flex h-full flex-col gap-4'>
+            <TabsList className='w-fit'>
+              <TabsTrigger value='alerts' className='cursor-pointer'>
+                Alerts
+              </TabsTrigger>
+              <TabsTrigger value='settings' className='cursor-pointer'>
+                Settings
+              </TabsTrigger>
+            </TabsList>
 
-          <TabsContent value='alerts' className='mt-4'>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Type</TableHead>
-                  <TableHead>Current Stock</TableHead>
-                  <TableHead>Minimum Level</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {allStockItems.map((item) => {
-                  let variant: "default" | "destructive" | "secondary" =
-                    "default";
-                  if (item.remaining_meters === 0) {
-                    variant = "destructive";
-                  } else if (
-                    item.remaining_meters <= (minimumLevels[item.type] || 10)
-                  ) {
-                    variant = "secondary";
-                  }
-                  return (
-                    <TableRow key={item.type}>
-                      <TableCell>
-                        <Badge variant='outline' className='capitalize'>
-                          {item.type}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant={variant}>{item.remaining_meters}</Badge>
-                      </TableCell>
-                      <TableCell>{minimumLevels[item.type] || 10}</TableCell>
-                    </TableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
-          </TabsContent>
+            <TabsContent value='alerts'>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Type</TableHead>
+                    <TableHead>Current Stock</TableHead>
+                    <TableHead>Minimum Level</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {allStockItems.map((item) => {
+                    let variant: "default" | "destructive" | "secondary" =
+                      "default";
+                    if (item.remaining_meters === 0) {
+                      variant = "destructive";
+                    } else if (
+                      item.remaining_meters <= (minimumLevels[item.type] || 10)
+                    ) {
+                      variant = "secondary";
+                    }
+                    return (
+                      <TableRow key={item.type}>
+                        <TableCell>
+                          <Badge variant='outline' className='capitalize'>
+                            {item.type}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant={variant}>
+                            {item.remaining_meters}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>{minimumLevels[item.type] || 10}</TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </TabsContent>
 
-          <TabsContent value='settings' className='mt-4'>
-            <div className='space-y-4'>
-              {METER_TYPES.map((type) => (
-                <div
-                  key={type}
-                  className='flex items-center justify-between gap-4'>
-                  <Badge variant='outline' className='capitalize'>
-                    {type}
-                  </Badge>
-                  <div className='flex items-center gap-2'>
-                    <Input
-                      type='text'
-                      value={formValues[type]}
-                      onChange={(e) =>
-                        setFormValues((prev) => ({
-                          ...prev,
-                          [type]: e.target.value,
-                        }))
-                      }
-                      className='w-24'
-                      placeholder='Enter value'
-                    />
-                    <span className='text-sm text-muted-foreground'>units</span>
+            <TabsContent value='settings' className='mt-2'>
+              <div className='space-y-4 pb-2'>
+                {METER_TYPES.map((type) => (
+                  <div
+                    key={type}
+                    className='flex items-center justify-between gap-4'>
+                    <Badge variant='outline' className='capitalize'>
+                      {type}
+                    </Badge>
+                    <div className='flex items-center gap-2'>
+                      <Input
+                        type='text'
+                        value={formValues[type]}
+                        onChange={(e) =>
+                          setFormValues((prev) => ({
+                            ...prev,
+                            [type]: e.target.value,
+                          }))
+                        }
+                        className='w-24'
+                        placeholder='Enter value'
+                      />
+                      <span className='text-sm text-muted-foreground'>
+                        units
+                      </span>
+                    </div>
                   </div>
-                </div>
-              ))}
-              <Button onClick={validateAndSaveSettings} className='w-full mt-4'>
-                <Save className='mr-2 h-4 w-4' />
-                Save Settings
-              </Button>
-            </div>
-          </TabsContent>
-        </Tabs>
+                ))}
+                <Button
+                  onClick={validateAndSaveSettings}
+                  className='w-full mt-4 cursor-pointer'>
+                  <Save className='mr-2 h-4 w-4' />
+                  Save Settings
+                </Button>
+              </div>
+            </TabsContent>
+          </Tabs>
+        </div>
       </SheetContent>
     </Sheet>
   );

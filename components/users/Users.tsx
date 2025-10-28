@@ -234,7 +234,10 @@ export default function UsersPage() {
     return (
       <div className='flex flex-col items-center justify-center min-h-[60vh] gap-4'>
         <div className='text-lg text-red-500'>Error: {error.message}</div>
-        <Button onClick={() => refetch()} variant='outline'>
+        <Button
+          onClick={() => refetch()}
+          variant='outline'
+          className='cursor-pointer'>
           <RefreshCw className='mr-2 h-4 w-4' />
           Retry
         </Button>
@@ -275,7 +278,7 @@ export default function UsersPage() {
               required
             />
             <button
-              className='absolute inset-y-px end-px flex h-full w-9 items-center justify-center rounded-e-lg text-muted-foreground/80 ring-offset-background transition-shadow hover:text-foreground focus-visible:border focus-visible:border-ring focus-visible:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/30 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50'
+              className='absolute inset-y-px end-px flex h-full w-9 items-center justify-center rounded-e-lg text-muted-foreground/80 ring-offset-background transition-shadow hover:text-foreground focus-visible:border focus-visible:border-ring focus-visible:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/30 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer'
               type='button'
               onClick={toggleVisibility}
               aria-label={isVisible ? "Hide password" : "Show password"}
@@ -295,14 +298,16 @@ export default function UsersPage() {
                 onClick={() => {
                   setNewPassword("");
                   setPasswordChangeUserId(null);
-                }}>
+                }}
+                className='cursor-pointer'>
                 Cancel
               </Button>
             </DialogClose>
             <Button
               onClick={() => {
                 handleChangePassword();
-              }}>
+              }}
+              className='cursor-pointer'>
               Change Password
             </Button>
           </DialogFooter>
@@ -329,7 +334,7 @@ export default function UsersPage() {
               variant='outline'
               size='icon'
               onClick={handleRefresh}
-              className='hover:bg-gray-100'
+              className='hover:bg-gray-100 cursor-pointer'
               disabled={isLoading || isRefreshing}
               aria-label='Refresh users list'>
               <RefreshCw
@@ -415,13 +420,17 @@ export default function UsersPage() {
                           currentUser.role === "admin") && (
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
-                              <Button variant='ghost' size='sm'>
+                              <Button
+                                variant='ghost'
+                                size='sm'
+                                className='cursor-pointer'>
                                 <MoreVertical className='h-4 w-4' />
                               </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align='end'>
-                              {user.id === currentUser.id && (
+                              {user.id === currentUser?.id && (
                                 <DropdownMenuItem
+                                  className='cursor-pointer'
                                   onSelect={(e) => {
                                     e.preventDefault();
                                     e.stopPropagation();
@@ -444,6 +453,7 @@ export default function UsersPage() {
                                       onOpenChange={setShowEditNameDialog}>
                                       <DialogTrigger asChild>
                                         <DropdownMenuItem
+                                          className='cursor-pointer'
                                           onSelect={(e) => {
                                             e.preventDefault();
                                             setEditingUser(user);
@@ -475,7 +485,8 @@ export default function UsersPage() {
                                                 setEditingUser(null);
                                                 setNewName("");
                                                 setShowEditNameDialog(false);
-                                              }}>
+                                              }}
+                                              className='cursor-pointer'>
                                               Cancel
                                             </Button>
                                           </DialogClose>
@@ -483,7 +494,8 @@ export default function UsersPage() {
                                             onClick={() => {
                                               handleUpdateName();
                                               setNewName("");
-                                            }}>
+                                            }}
+                                            className='cursor-pointer'>
                                             Save
                                           </Button>
                                         </DialogFooter>
@@ -491,6 +503,7 @@ export default function UsersPage() {
                                     </Dialog>
 
                                     <DropdownMenuItem
+                                      className='cursor-pointer'
                                       onClick={() =>
                                         handleChangeRole(user, "admin")
                                       }
@@ -500,6 +513,7 @@ export default function UsersPage() {
                                     </DropdownMenuItem>
 
                                     <DropdownMenuItem
+                                      className='cursor-pointer'
                                       onClick={() =>
                                         handleChangeRole(user, "accountant")
                                       }
@@ -509,6 +523,7 @@ export default function UsersPage() {
                                     </DropdownMenuItem>
 
                                     <DropdownMenuItem
+                                      className='cursor-pointer'
                                       onClick={() =>
                                         handleChangeRole(user, "user")
                                       }
@@ -518,6 +533,7 @@ export default function UsersPage() {
                                     </DropdownMenuItem>
 
                                     <DropdownMenuItem
+                                      className='cursor-pointer'
                                       onClick={() => handleToggleStatus(user)}>
                                       {user.isActive ? (
                                         <>
@@ -533,6 +549,7 @@ export default function UsersPage() {
                                     </DropdownMenuItem>
 
                                     <DropdownMenuItem
+                                      className='cursor-pointer'
                                       onClick={() =>
                                         openChangePasswordDialog(
                                           user.id,
@@ -608,13 +625,17 @@ export default function UsersPage() {
                           currentUser.role === "admin") && (
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
-                              <Button variant='ghost' size='sm'>
+                              <Button
+                                variant='ghost'
+                                size='sm'
+                                className='cursor-pointer'>
                                 <MoreVertical className='h-4 w-4' />
                               </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align='end'>
                               {user.id === currentUser.id && (
                                 <DropdownMenuItem
+                                  className='cursor-pointer'
                                   onSelect={(e) => {
                                     e.preventDefault();
                                     e.stopPropagation();
@@ -637,6 +658,7 @@ export default function UsersPage() {
                                       onOpenChange={setShowEditNameDialog}>
                                       <DialogTrigger asChild>
                                         <DropdownMenuItem
+                                          className='cursor-pointer'
                                           onSelect={(e) => {
                                             e.preventDefault();
                                             setEditingUser(user);
@@ -668,7 +690,8 @@ export default function UsersPage() {
                                                 setEditingUser(null);
                                                 setNewName("");
                                                 setShowEditNameDialog(false);
-                                              }}>
+                                              }}
+                                              className='cursor-pointer'>
                                               Cancel
                                             </Button>
                                           </DialogClose>
@@ -676,7 +699,8 @@ export default function UsersPage() {
                                             onClick={() => {
                                               handleUpdateName();
                                               setNewName("");
-                                            }}>
+                                            }}
+                                            className='cursor-pointer'>
                                             Save
                                           </Button>
                                         </DialogFooter>
@@ -684,6 +708,7 @@ export default function UsersPage() {
                                     </Dialog>
 
                                     <DropdownMenuItem
+                                      className='cursor-pointer'
                                       onClick={() =>
                                         handleChangeRole(user, "admin")
                                       }
@@ -693,6 +718,7 @@ export default function UsersPage() {
                                     </DropdownMenuItem>
 
                                     <DropdownMenuItem
+                                      className='cursor-pointer'
                                       onClick={() =>
                                         handleChangeRole(user, "accountant")
                                       }
@@ -702,6 +728,7 @@ export default function UsersPage() {
                                     </DropdownMenuItem>
 
                                     <DropdownMenuItem
+                                      className='cursor-pointer'
                                       onClick={() =>
                                         handleChangeRole(user, "user")
                                       }
@@ -711,6 +738,7 @@ export default function UsersPage() {
                                     </DropdownMenuItem>
 
                                     <DropdownMenuItem
+                                      className='cursor-pointer'
                                       onClick={() => handleToggleStatus(user)}>
                                       {user.isActive ? (
                                         <>
@@ -726,6 +754,7 @@ export default function UsersPage() {
                                     </DropdownMenuItem>
 
                                     <DropdownMenuItem
+                                      className='cursor-pointer'
                                       onClick={() =>
                                         openChangePasswordDialog(
                                           user.id,
@@ -760,6 +789,7 @@ export default function UsersPage() {
                     setCurrentPage((prev) => Math.max(prev - 1, 1))
                   }
                   className={cn(
+                    "cursor-pointer",
                     currentPage === 1 && "pointer-events-none opacity-50"
                   )}
                 />
@@ -778,7 +808,8 @@ export default function UsersPage() {
                     <PaginationItem key={page}>
                       <PaginationLink
                         onClick={() => setCurrentPage(page)}
-                        isActive={page === currentPage}>
+                        isActive={page === currentPage}
+                        className='cursor-pointer'>
                         {page}
                       </PaginationLink>
                     </PaginationItem>
@@ -802,6 +833,7 @@ export default function UsersPage() {
                     )
                   }
                   className={cn(
+                    "cursor-pointer",
                     currentPage === filteredAndPaginatedUsers().totalPages &&
                       "pointer-events-none opacity-50"
                   )}

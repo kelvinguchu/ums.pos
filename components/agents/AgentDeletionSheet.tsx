@@ -186,7 +186,7 @@ export default function AgentDeletionSheet({
         {scannedMeters.length === inventory.length ? (
           <Button
             onClick={() => handleDelete(false)}
-            className='w-full bg-red-600 hover:bg-red-700 text-sm sm:text-base py-2 sm:py-3'
+            className='w-full bg-red-600 hover:bg-red-700 text-sm sm:text-base py-2 sm:py-3 cursor-pointer'
             disabled={isDeleting}>
             {isDeleting ? (
               <>
@@ -200,7 +200,7 @@ export default function AgentDeletionSheet({
         ) : scannedMeters.length > 0 ? (
           <Button
             onClick={() => handleDelete(true)}
-            className='w-full bg-yellow-600 hover:bg-yellow-700 text-sm sm:text-base py-2 sm:py-3'
+            className='w-full bg-yellow-600 hover:bg-yellow-700 text-sm sm:text-base py-2 sm:py-3 cursor-pointer'
             disabled={isDeleting}>
             {isDeleting ? (
               <>

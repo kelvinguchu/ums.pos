@@ -215,7 +215,7 @@ export function MeterSalesRow({
                     <Button
                       variant='ghost'
                       size='icon'
-                      className='h-5 w-5 ml-1 rounded-full'
+                      className='h-5 w-5 ml-1 rounded-full cursor-pointer'
                       onClick={copyToClipboard}
                       title='Copy reference number'>
                       {isCopying ? (
@@ -235,7 +235,7 @@ export function MeterSalesRow({
                 e.stopPropagation();
                 onOpenNoteDialog(batch);
               }}
-              className='h-8 w-8'
+              className='h-8 w-8 cursor-pointer'
               title={batch.notes ? "Update note" : "Add note"}>
               <Pencil
                 className={`h-4 w-4 ${batch.notes ? "text-blue-600" : "text-gray-400"}`}
@@ -356,7 +356,7 @@ export function MeterSalesRow({
                 variant='outline'
                 size='sm'
                 onClick={handleDownloadSerials}
-                className='whitespace-nowrap hover:bg-gray-50'>
+                className='whitespace-nowrap hover:bg-gray-50 cursor-pointer'>
                 <Download className='h-4 w-4 mr-2' />
                 Download List
               </Button>
@@ -415,7 +415,7 @@ export function MeterSalesRow({
                             className={
                               currentPage === 1
                                 ? "pointer-events-none opacity-50"
-                                : ""
+                                : "cursor-pointer"
                             }
                           />
                         </PaginationItem>
@@ -438,7 +438,8 @@ export function MeterSalesRow({
                               <PaginationItem>
                                 <PaginationLink
                                   onClick={() => setCurrentPage(page)}
-                                  isActive={currentPage === page}>
+                                  isActive={currentPage === page}
+                                  className='cursor-pointer'>
                                   {page}
                                 </PaginationLink>
                               </PaginationItem>
@@ -464,7 +465,7 @@ export function MeterSalesRow({
                             className={
                               currentPage === totalPages
                                 ? "pointer-events-none opacity-50"
-                                : ""
+                                : "cursor-pointer"
                             }
                           />
                         </PaginationItem>
@@ -487,7 +488,7 @@ export function MeterSalesRow({
             <Button
               variant='outline'
               size='icon'
-              className='fixed bottom-4 right-4 rounded-full shadow-lg bg-white/90 backdrop-blur-sm hover:bg-gray-50'
+              className='fixed bottom-4 right-4 rounded-full shadow-lg bg-white/90 backdrop-blur-sm hover:bg-gray-50 cursor-pointer'
               onClick={scrollToTop}>
               <ArrowUp className='h-4 w-4' />
             </Button>

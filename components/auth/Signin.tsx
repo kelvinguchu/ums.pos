@@ -35,10 +35,11 @@ const SignIn = () => {
     try {
       const email = `${emailPrefix}@umskenya.com`;
 
-      const { error: signInError } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
+      const { data: authData, error: signInError } =
+        await supabase.auth.signInWithPassword({
+          email,
+          password,
+        });
 
       if (signInError) {
         if (signInError.message === "Invalid login credentials") {
@@ -47,8 +48,27 @@ const SignIn = () => {
         throw signInError;
       }
 
+      if (!authData?.user) {
+        throw new Error("Sign in succeeded but no user information returned");
+      }
+
+      const { data: profile, error: profileError } = await supabase
+        .from("user_profiles")
+        .select("is_active")
+        .eq("id", authData.user.id)
+        .single();
+
+      if (profileError) {
+        console.error("Failed to fetch user profile status", profileError);
+        throw new Error("Unable to verify account status. Please try again.");
+      }
+
+      if (profile?.is_active === false) {
+        router.replace("/deactivated");
+        return;
+      }
+
       // Immediately navigate - use replace to avoid back button issues
-      // The middleware will handle session verification
       router.replace("/dashboard");
 
       // Optional: Force a hard navigation for even faster perceived performance
@@ -119,7 +139,7 @@ const SignIn = () => {
                     disabled={isLoading}
                   />
                   <button
-                    className='absolute inset-y-px end-px flex h-full w-9 items-center justify-center rounded-e-lg text-muted-foreground/80 ring-offset-background transition-shadow hover:text-foreground focus-visible:border focus-visible:border-ring focus-visible:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/30 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50'
+                    className='absolute inset-y-px end-px flex h-full w-9 items-center justify-center rounded-e-lg text-muted-foreground/80 ring-offset-background transition-shadow hover:text-foreground cursor-pointer focus-visible:border focus-visible:border-ring focus-visible:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/30 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50'
                     type='button'
                     onClick={toggleVisibility}
                     aria-label={isVisible ? "Hide password" : "Show password"}

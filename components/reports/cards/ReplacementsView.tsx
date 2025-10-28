@@ -135,7 +135,7 @@ export default function ReplacementsView() {
             onClick={handleRefresh}
             disabled={isLoading || isRefreshing}
             aria-label='Refresh replacement data'
-            className='hover:bg-gray-100'>
+            className='hover:bg-gray-100 cursor-pointer'>
             <RefreshCw
               className={cn(
                 "h-4 w-4 transition-transform",
@@ -175,7 +175,7 @@ export default function ReplacementsView() {
                     variant='ghost'
                     size='icon'
                     onClick={clearFilters}
-                    className='text-muted-foreground hover:text-foreground'>
+                    className='text-muted-foreground hover:text-foreground cursor-pointer'>
                     <X className='h-4 w-4' />
                   </Button>
                 )}
@@ -235,8 +235,8 @@ export default function ReplacementsView() {
                             }
                             className={
                               currentPage === 1
-                                ? "pointer-events-none opacity-50"
-                                : ""
+                                ? "pointer-events-none opacity-50 cursor-pointer"
+                                : "cursor-pointer"
                             }
                           />
                         </PaginationItem>
@@ -259,7 +259,8 @@ export default function ReplacementsView() {
                               <PaginationItem>
                                 <PaginationLink
                                   onClick={() => setCurrentPage(page)}
-                                  isActive={currentPage === page}>
+                                  isActive={currentPage === page}
+                                  className='cursor-pointer'>
                                   {page}
                                 </PaginationLink>
                               </PaginationItem>
@@ -275,8 +276,8 @@ export default function ReplacementsView() {
                             }
                             className={
                               currentPage === totalPages
-                                ? "pointer-events-none opacity-50"
-                                : ""
+                                ? "pointer-events-none opacity-50 cursor-pointer"
+                                : "cursor-pointer"
                             }
                           />
                         </PaginationItem>

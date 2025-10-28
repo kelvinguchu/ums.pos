@@ -128,7 +128,7 @@ export const SubmissionHandler = memo(function SubmissionHandler({
           onClick={onDismissReceipt}
           variant='ghost'
           size='icon'
-          className='absolute -right-2 -top-2 h-6 w-6 rounded-full bg-gray-200 hover:bg-gray-300'
+          className='absolute -right-2 -top-2 h-6 w-6 rounded-full bg-gray-200 hover:bg-gray-300 cursor-pointer'
           aria-label='Dismiss'>
           <X className='h-4 w-4' />
         </Button>

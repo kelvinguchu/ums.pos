@@ -210,9 +210,8 @@ const SaleDetailsDialog = ({
                 <PopoverTrigger asChild>
                   <Button
                     variant='outline'
-                    role='combobox'
                     aria-expanded={openCombobox}
-                    className='w-full justify-between bg-white border-2 border-gray-200 hover:border-primary transition-colors font-medium'>
+                    className='w-full justify-between bg-white border-2 border-gray-200 hover:border-primary transition-colors font-medium cursor-pointer'>
                     {formData.customerCounty || "Select county..."}
                     <ChevronsUpDown className='ml-2 h-4 w-4 shrink-0 opacity-50' />
                   </Button>

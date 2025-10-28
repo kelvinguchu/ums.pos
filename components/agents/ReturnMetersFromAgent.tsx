@@ -216,14 +216,14 @@ export default function ReturnMetersFromAgent({
             <div className='mb-6 relative'>
               <Button
                 onClick={handleDownloadReceipt}
-                className='w-full bg-[#2ECC40] hover:bg-[#28a035] text-white'>
+                className='w-full bg-[#2ECC40] hover:bg-[#28a035] text-white cursor-pointer'>
                 Download Return Receipt
               </Button>
               <Button
                 onClick={() => setIsSubmitted(false)}
                 variant='ghost'
                 size='icon'
-                className='absolute -right-2 -top-2 h-6 w-6 rounded-full bg-gray-200 hover:bg-gray-300'
+                className='absolute -right-2 -top-2 h-6 w-6 rounded-full bg-gray-200 hover:bg-gray-300 cursor-pointer'
                 aria-label='Dismiss'>
                 <X className='h-4 w-4' />
               </Button>
@@ -234,7 +234,7 @@ export default function ReturnMetersFromAgent({
             <>
               <Button
                 onClick={handleReturnMeters}
-                className='w-full bg-primary hover:bg-[#000066] text-white mb-6'
+                className='w-full bg-primary hover:bg-[#000066] text-white mb-6 cursor-pointer'
                 disabled={isSubmitting}>
                 {isSubmitting ? (
                   <>
@@ -282,7 +282,7 @@ export default function ReturnMetersFromAgent({
                               onClick={() => handleRemoveMeter(index)}
                               variant='ghost'
                               size='sm'
-                              className='hover:bg-red-100'>
+                              className='hover:bg-red-100 cursor-pointer'>
                               <X className='h-4 w-4 text-red-500' />
                             </Button>
                           </TableCell>

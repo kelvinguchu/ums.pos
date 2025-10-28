@@ -102,7 +102,7 @@ const CreateUser = ({ onClose }: { onClose: () => void }) => {
               required
             />
             <button
-              className='absolute inset-y-px end-px flex h-full w-9 items-center justify-center rounded-e-lg text-muted-foreground/80 ring-offset-background transition-shadow hover:text-foreground focus-visible:border focus-visible:border-ring focus-visible:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/30 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50'
+              className='absolute inset-y-px end-px flex h-full w-9 items-center justify-center rounded-e-lg text-muted-foreground/80 ring-offset-background transition-shadow hover:text-foreground focus-visible:border focus-visible:border-ring focus-visible:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/30 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer'
               type='button'
               onClick={toggleVisibility}
               aria-label={isVisible ? "Hide password" : "Show password"}
@@ -117,7 +117,7 @@ const CreateUser = ({ onClose }: { onClose: () => void }) => {
           </div>
         </div>
         <Select value={role} onValueChange={setRole}>
-          <SelectTrigger className='w-full border border-gray-300 rounded-md p-2'>
+          <SelectTrigger className='w-full border border-gray-300 rounded-md p-2 cursor-pointer'>
             <SelectValue>
               {role === "user"
                 ? "User"
@@ -134,7 +134,7 @@ const CreateUser = ({ onClose }: { onClose: () => void }) => {
         </Select>
         <Button
           type='submit'
-          className='w-full bg-primary hover:bg-[#000061] text-white'
+          className='w-full bg-primary hover:bg-[#000061] text-white cursor-pointer'
           disabled={isLoading}>
           {isLoading ? (
             <>

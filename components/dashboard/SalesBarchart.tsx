@@ -227,7 +227,7 @@ export function SalesBarchart() {
               <Select
                 value={timePeriod}
                 onValueChange={(value) => setTimePeriod(value as TimePeriod)}>
-                <SelectTrigger className='w-[180px]'>
+                <SelectTrigger className='w-[180px] cursor-pointer'>
                   <SelectValue>{TIME_PERIODS[timePeriod].label}</SelectValue>
                 </SelectTrigger>
                 <SelectContent>
@@ -251,7 +251,7 @@ export function SalesBarchart() {
               className='relative z-30 flex flex-1 flex-col justify-center gap-1 border-t px-4 py-3 text-left
                 even:border-l data-[active=true]:bg-muted/50
                 lg:px-8 lg:py-6
-                lg:border-t-0 lg:border-l'
+                lg:border-t-0 lg:border-l cursor-pointer'
               onClick={() => setActiveChart(key as keyof typeof chartConfig)}>
               <span className='text-xs text-muted-foreground'>
                 {config.label}
