@@ -80,7 +80,6 @@ export async function updateUserProfile(
     .update(userProfiles)
     .set({
       ...updates,
-      updated_at: new Date(),
     })
     .where(eq(userProfiles.id, userId))
     .returning();
