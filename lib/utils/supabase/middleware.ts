@@ -5,6 +5,15 @@ export async function updateSession(request: NextRequest) {
   let supabaseResponse = NextResponse.next({
     request,
   });
+  const pathname = request.nextUrl.pathname;
+  const isAuthPage =
+    pathname.startsWith("/signin") || pathname.startsWith("/error");
+  const isDeactivatedPage = pathname.startsWith("/deactivated");
+  const redirectTo = (targetPath: string) => {
+    const url = request.nextUrl.clone();
+    url.pathname = targetPath;
+    return NextResponse.redirect(url);
+  };
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -39,52 +48,42 @@ export async function updateSession(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (
-    !user &&
-    !request.nextUrl.pathname.startsWith("/signin") &&
-    !request.nextUrl.pathname.startsWith("/error")
-  ) {
-    // no user, potentially respond by redirecting the user to the signin page
-    const url = request.nextUrl.clone();
-    url.pathname = "/signin";
-    return NextResponse.redirect(url);
+  if (!user) {
+    if (isAuthPage || isDeactivatedPage) {
+      return supabaseResponse;
+    }
+    return redirectTo("/signin");
   }
 
-  // Check if user is active (if user exists and not on signin/error pages)
-  if (
-    user &&
-    !request.nextUrl.pathname.startsWith("/signin") &&
-    !request.nextUrl.pathname.startsWith("/error")
-  ) {
-    try {
-      const { data: profile, error } = await supabase
-        .from("user_profiles")
-        .select("is_active")
-        .eq("id", user.id)
-        .single();
+  if (isAuthPage) {
+    return supabaseResponse;
+  }
 
-      if (error) {
-        console.error("Error fetching user profile:", error);
-        // On error, allow the request to proceed
-      } else {
-        // If user profile doesn't exist or is inactive, redirect to deactivated page
-        if (!profile?.is_active) {
-          // Allow access to /deactivated page
-          if (!request.nextUrl.pathname.startsWith("/deactivated")) {
-            const url = request.nextUrl.clone();
-            url.pathname = "/deactivated";
-            return NextResponse.redirect(url);
-          }
-        } else if (request.nextUrl.pathname.startsWith("/deactivated")) {
-          // If user is active but trying to access /deactivated, redirect to dashboard
-          const url = request.nextUrl.clone();
-          url.pathname = "/dashboard";
-          return NextResponse.redirect(url);
-        }
-      }
-    } catch (error) {
-      console.error("Error checking user active status:", error);
-      // On error, allow the request to proceed
+  try {
+    const { data: profile, error } = await supabase
+      .from("user_profiles")
+      .select("is_active")
+      .eq("id", user.id)
+      .maybeSingle();
+
+    const shouldTreatAsInactive =
+      !!error || !profile || profile.is_active === false;
+
+    if (error) {
+      console.error("Error fetching user profile:", error);
+    }
+
+    if (shouldTreatAsInactive) {
+      return isDeactivatedPage ? supabaseResponse : redirectTo("/deactivated");
+    }
+
+    if (isDeactivatedPage) {
+      return redirectTo("/dashboard");
+    }
+  } catch (error) {
+    console.error("Error checking user active status:", error);
+    if (!isDeactivatedPage) {
+      return redirectTo("/deactivated");
     }
   }
 

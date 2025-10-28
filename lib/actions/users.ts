@@ -274,3 +274,66 @@ export async function signOut() {
     throw new Error(error.message || "Failed to sign out");
   }
 }
+
+export async function signIn(email: string, password: string) {
+  try {
+    const supabase = await createClient();
+
+    // Clear any existing session before attempting a new sign-in
+    await supabase.auth.signOut();
+
+    const { data: authData, error: authError } =
+      await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+    if (authError) {
+      throw authError;
+    }
+
+    if (!authData.user) {
+      throw new Error("No user data returned");
+    }
+
+    const { data: profile, error: profileError } = await supabase
+      .from("user_profiles")
+      .select("is_active")
+      .eq("id", authData.user.id)
+      .maybeSingle();
+
+    if (profileError) {
+      throw new Error("Error fetching user profile");
+    }
+
+    if (!profile?.is_active) {
+      await supabase.auth.signOut();
+      const error = new Error("ACCOUNT_DEACTIVATED");
+      error.name = "AuthError";
+      throw error;
+    }
+
+    return {
+      user: authData.user,
+      session: authData.session,
+      error: null,
+    } as const;
+  } catch (error: any) {
+    console.error("Error signing in:", error);
+    let fallbackMessage = "Failed to sign in";
+    if (typeof error === "object" && error !== null && "message" in error) {
+      const messageValue = (error as { message?: unknown }).message;
+      if (typeof messageValue === "string" && messageValue.trim().length > 0) {
+        fallbackMessage = messageValue;
+      }
+    }
+
+    const normalizedError =
+      error instanceof Error ? error : new Error(fallbackMessage);
+    return {
+      user: null,
+      session: null,
+      error: normalizedError,
+    } as const;
+  }
+}

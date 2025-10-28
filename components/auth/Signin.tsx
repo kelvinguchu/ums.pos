@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { createClient } from "@/lib/utils/supabase/client";
+import { useEffect, useState } from "react";
+import { signIn } from "@/lib/actions/users";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -23,9 +23,13 @@ const SignIn = () => {
   const [isVisible, setIsVisible] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const supabase = createClient();
 
   const toggleVisibility = () => setIsVisible((prevState) => !prevState);
+
+  useEffect(() => {
+    router.prefetch("/dashboard");
+    router.prefetch("/deactivated");
+  }, [router]);
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -35,49 +39,29 @@ const SignIn = () => {
     try {
       const email = `${emailPrefix}@umskenya.com`;
 
-      const { data: authData, error: signInError } =
-        await supabase.auth.signInWithPassword({
-          email,
-          password,
-        });
+      const response = await signIn(email, password);
 
-      if (signInError) {
-        if (signInError.message === "Invalid login credentials") {
-          throw new Error("Invalid email or password");
-        }
-        throw signInError;
+      if (response.error) {
+        throw response.error;
       }
 
-      if (!authData?.user) {
-        throw new Error("Sign in succeeded but no user information returned");
-      }
+      router.replace("/dashboard");
+    } catch (error: any) {
+      const rawMessage: string | undefined = error?.message;
 
-      const { data: profile, error: profileError } = await supabase
-        .from("user_profiles")
-        .select("is_active")
-        .eq("id", authData.user.id)
-        .single();
-
-      if (profileError) {
-        console.error("Failed to fetch user profile status", profileError);
-        throw new Error("Unable to verify account status. Please try again.");
-      }
-
-      if (profile?.is_active === false) {
+      if (rawMessage === "ACCOUNT_DEACTIVATED") {
+        setIsLoading(false);
         router.replace("/deactivated");
         return;
       }
 
-      // Immediately navigate - use replace to avoid back button issues
-      router.replace("/dashboard");
+      const errorMessage = rawMessage?.trim().length
+        ? rawMessage
+        : "Failed to sign in";
 
-      // Optional: Force a hard navigation for even faster perceived performance
-      // window.location.href = "/dashboard";
-    } catch (error: any) {
-      const errorMessage = error?.message || "Failed to sign in";
       setError(errorMessage);
 
-      if (error.message?.includes("Invalid login credentials")) {
+      if (rawMessage?.includes("Invalid login credentials")) {
         setPassword("");
       }
       setIsLoading(false);
