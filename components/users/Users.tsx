@@ -130,6 +130,8 @@ export default function UsersPage() {
       toast.success(
         `User ${newStatus ? "activated" : "deactivated"} successfully`
       );
+      
+      await refetch({ throwOnError: true });
     } catch (error) {
       toast.error("Failed to update user status");
     }
