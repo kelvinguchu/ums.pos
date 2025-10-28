@@ -164,51 +164,6 @@ export async function getUnreadNotificationsCount(
 }
 
 /**
- * Toggles push notification settings for a user
- * Note: This function is better placed in users.ts but included here for completeness
- */
-export async function togglePushNotifications(
-  userId: string,
-  enabled: boolean
-): Promise<boolean> {
-  try {
-    const [user] = await db
-      .update(userProfiles)
-      .set({ push_enabled: enabled })
-      .where(eq(userProfiles.id, userId))
-      .returning({ push_enabled: userProfiles.push_enabled });
-
-    // Return the actual status from the database
-    return user?.push_enabled === true;
-  } catch (error) {
-    console.error("Error toggling push notifications:", error);
-    throw error;
-  }
-}
-
-/**
- * Gets the push notification status for a user
- * Note: This function is better placed in users.ts but included here for completeness
- */
-export async function getPushNotificationStatus(
-  userId: string
-): Promise<boolean> {
-  try {
-    const [user] = await db
-      .select({ push_enabled: userProfiles.push_enabled })
-      .from(userProfiles)
-      .where(eq(userProfiles.id, userId))
-      .limit(1);
-
-    // Explicitly return boolean
-    return user?.push_enabled === true;
-  } catch (error) {
-    console.error("Error getting push notification status:", error);
-    return false;
-  }
-}
-
-/**
  * Creates a notification for a meter sale
  * This is a helper function that creates a standardized notification for meter sales
  */

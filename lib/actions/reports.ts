@@ -442,7 +442,7 @@ export async function getPurchaseBatches(): Promise<
     quantity: number;
     total_cost: string;
     purchase_date: Date | null;
-    added_by: string;
+    added_by: string | null;
     created_at: Date | null;
     batch_number: string;
     remaining_meters: number;
@@ -475,10 +475,7 @@ export async function getPurchaseBatches(): Promise<
         userProfiles,
         eq(meterPurchaseBatches.added_by, userProfiles.id)
       )
-      .leftJoin(
-        meterCounts,
-        eq(sql`${meterPurchaseBatches.id}::text`, meterCounts.batch_id)
-      )
+      .leftJoin(meterCounts, eq(meterPurchaseBatches.id, meterCounts.batch_id))
       .orderBy(desc(meterPurchaseBatches.created_at));
 
     return batches.map((batch) => ({

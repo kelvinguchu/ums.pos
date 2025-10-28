@@ -1,4 +1,4 @@
-import { format, differenceInDays } from 'date-fns';
+import { differenceInDays } from 'date-fns';
 
 export interface ReportMetrics {
   totalSales: number;

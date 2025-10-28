@@ -387,7 +387,7 @@ export default function AssignMetersToAgent({
             <>
               <Button
                 onClick={handleAssignMeters}
-                className='w-full bg-[#000080] hover:bg-[#000066] text-white mb-6'
+                className='w-full bg-primary hover:bg-[#000066] text-white mb-6'
                 disabled={isAssigning}>
                 {isAssigning ? (
                   <>

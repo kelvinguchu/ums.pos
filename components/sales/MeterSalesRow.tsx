@@ -8,10 +8,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
-import {
-  getMetersByBatchId,
-  getTransactionReferenceForBatch,
-} from "@/lib/actions/sales";
+import { getSaleBatchMeterDetails } from "@/lib/actions/sales";
 
 import {
   Loader2,
@@ -80,30 +77,61 @@ export function MeterSalesRow({
   const [transactionRef, setTransactionRef] = useState<string | null>(null);
   const [isRefLoading, setIsRefLoading] = useState(true);
   const [isCopying, setIsCopying] = useState(false);
+  const batchCacheRef = useRef(
+    // Cache batches locally for quicker subsequent opens.
+    new Map<string, { meters: SoldMeter[]; transactionRef: string | null }>()
+  );
 
   // Add useEffect to fetch data when sheet opens
   useEffect(() => {
-    async function fetchData() {
-      if (isOpen) {
-        setLoading(true);
-        setIsRefLoading(true);
-        try {
-          const data = await getMetersByBatchId(batch.id);
-          setMeters(data);
+    if (!isOpen) return;
 
-          // Fetch the transaction reference number
-          const refNumber = await getTransactionReferenceForBatch(batch.id);
-          setTransactionRef(refNumber);
-        } catch (error) {
+    const cached = batchCacheRef.current.get(batch.id);
+    if (cached) {
+      setMeters(cached.meters);
+      setTransactionRef(cached.transactionRef);
+      setLoading(false);
+      setIsRefLoading(false);
+      return;
+    }
+
+    let cancelled = false;
+
+    setLoading(true);
+    setIsRefLoading(true);
+    setMeters([]);
+    setTransactionRef(null);
+
+    (async () => {
+      try {
+        const { meters: meterRows, transactionRef: refNumber } =
+          await getSaleBatchMeterDetails(batch.id);
+
+        if (cancelled) return;
+
+        batchCacheRef.current.set(batch.id, {
+          meters: meterRows,
+          transactionRef: refNumber,
+        });
+
+        setMeters(meterRows);
+        setTransactionRef(refNumber);
+      } catch (error) {
+        if (!cancelled) {
           console.error("Error fetching meter details:", error);
-        } finally {
+          toast.error("Unable to load meter details");
+        }
+      } finally {
+        if (!cancelled) {
           setLoading(false);
           setIsRefLoading(false);
         }
       }
-    }
+    })();
 
-    fetchData();
+    return () => {
+      cancelled = true;
+    };
   }, [isOpen, batch.id]);
 
   // Filter and paginate meters
@@ -173,8 +201,8 @@ export function MeterSalesRow({
 
   return (
     <Sheet open={isOpen} onOpenChange={onOpenChange}>
-      <SheetContent className='min-w-[60vw] w-full bg-gray-50 border-l border-gray-200 px-2'>
-        <SheetHeader className='space-y-1'>
+      <SheetContent className='min-w-[60vw] w-full bg-gray-50 border-l border-gray-200 px-2 gap-2'>
+        <SheetHeader className='space-y-1 pb-2'>
           <SheetTitle className='flex items-center gap-2 text-xl'>
             <span>Sale Details</span>
             <Badge variant='outline' className='bg-blue-100'>
@@ -230,7 +258,7 @@ export function MeterSalesRow({
 
         <div
           ref={scrollContainerRef}
-          className='mt-8 space-y-6 max-h-[80vh] overflow-y-auto relative pr-2'>
+          className='mt-2 space-y-6 max-h-[80vh] overflow-y-auto relative pr-2'>
           {/* Batch Summary */}
           <div className='grid grid-cols-1 md:grid-cols-3 gap-6'>
             {/* Sale Info */}

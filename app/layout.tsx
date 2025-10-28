@@ -7,7 +7,6 @@ import { NotificationProvider } from "@/contexts/NotificationContext";
 import { AuthProvider } from "@/contexts/AuthContext";
 import QueryProvider from "@/components/providers/QueryProvider";
 import { NuqsAdapter } from "nuqs/adapters/next/app";
-import Script from "next/script";
 
 const geistMono = Geist_Mono({
   subsets: ["latin"],

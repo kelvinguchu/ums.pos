@@ -14,10 +14,7 @@ import {
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import { Search, Loader2, X } from "lucide-react";
-import {
-  getAgentInventory,
-  removeFromAgentInventory,
-} from "@/lib/actions/agents";
+import { getAgentInventory } from "@/lib/actions/agents";
 import { processAgentMeterSale } from "@/lib/actions/sales";
 import { getUserProfile } from "@/lib/actions/users";
 import { pdf } from "@react-pdf/renderer";
@@ -157,7 +154,6 @@ export default function RecordAgentSale({
         meters: selectedMeters,
         currentUser,
         userName,
-        agentId: agent.id,
         saleDetails: {
           destination: agent.location,
           recipient: agent.name,
@@ -166,9 +162,6 @@ export default function RecordAgentSale({
           customerCounty: agent.county,
           customerContact: agent.phone_number,
           saleDate,
-        },
-        removeFromInventory: async (meterId: string) => {
-          await removeFromAgentInventory(meterId);
         },
       });
 
@@ -281,11 +274,11 @@ export default function RecordAgentSale({
   );
 
   return (
-    <div className='p-2 md:p-4 flex flex-col md:flex-row h-[80vh]'>
+    <div className='p-2 md:p-4 flex flex-col md:flex-row h-[90vh] overflow-hidden'>
       {/* Left section - Inventory */}
-      <div className='flex-1 md:pr-4 md:border-r mb-4 md:mb-0'>
-        <div className='relative mb-4'>
-          <Search className='absolute left-2 top-2.5 h-4 w-4 text-[#000080]' />
+      <div className='flex-1 md:pr-4 md:border-r mb-4 md:mb-0 flex flex-col min-h-0'>
+        <div className='relative mb-4 flex-shrink-0'>
+          <Search className='absolute left-2 top-2.5 h-4 w-4 text-primary' />
           <Input
             placeholder='Search by serial number...'
             value={searchTerm}
@@ -294,8 +287,8 @@ export default function RecordAgentSale({
           />
         </div>
 
-        <div className='flex flex-col h-[calc(100%-120px)]'>
-          <div className={`${tableStyles.container} flex-1`}>
+        <div className='flex flex-col flex-1 min-h-0 gap-2'>
+          <div className='flex-1 overflow-auto min-h-0'>
             <Table className={tableStyles.table}>
               <TableHeader>
                 <TableRow>
@@ -330,7 +323,7 @@ export default function RecordAgentSale({
                             (m) => m.id === meter.id
                           )}
                           onCheckedChange={() => handleCheckMeter(meter)}
-                          className={`border-[#000080] ${tableStyles.checkbox}`}
+                          className={`border-primary ${tableStyles.checkbox}`}
                         />
                       </TableCell>
                       <TableCell
@@ -349,7 +342,7 @@ export default function RecordAgentSale({
           </div>
 
           {totalPages > 1 && (
-            <Pagination className='mt-4'>
+            <Pagination className='flex-shrink-0 pb-2'>
               <PaginationContent>
                 <PaginationItem>
                   <PaginationPrevious
@@ -387,8 +380,8 @@ export default function RecordAgentSale({
       </div>
 
       {/* Right section - Selected Meters */}
-      <div className='flex-1 md:pl-4'>
-        <div className='flex items-center mb-4 gap-4'>
+      <div className='flex-1 md:pl-4 flex flex-col min-h-0'>
+        <div className='flex items-center mb-4 gap-4 flex-shrink-0'>
           <h3 className='font-semibold text-sm md:text-base flex-shrink-0'>
             Selected Meters ({selectedMeters.length})
           </h3>
@@ -399,7 +392,7 @@ export default function RecordAgentSale({
         </div>
 
         {/* Unit Prices Section */}
-        <div className='grid grid-cols-1 gap-3 mb-4'>
+        <div className='flex-shrink-0 px-2 mb-4 max-h-[180px] overflow-auto'>
           {Array.from(new Set(selectedMeters.map((m) => m.type))).map(
             (type) => (
               <div key={type} className='mb-2'>
@@ -418,8 +411,8 @@ export default function RecordAgentSale({
           )}
         </div>
 
-        <div className='flex flex-col h-[calc(100%-280px)]'>
-          <div className={`${tableStyles.container} flex-1`}>
+        <div className='flex flex-col flex-1 min-h-0 gap-2'>
+          <div className='flex-1 overflow-auto min-h-0'>
             <Table className={tableStyles.table}>
               <TableHeader>
                 <TableRow>
@@ -447,7 +440,7 @@ export default function RecordAgentSale({
           </div>
 
           {totalSelectedPages > 1 && (
-            <Pagination className='mt-4'>
+            <Pagination className='flex-shrink-0 pb-2'>
               <PaginationContent>
                 <PaginationItem>
                   <PaginationPrevious
@@ -486,10 +479,10 @@ export default function RecordAgentSale({
         </div>
 
         {/* Buttons */}
-        <div className='mt-4 space-y-2'>
+        <div className='pt-3 space-y-2 flex-shrink-0 border-t'>
           <Button
             onClick={handleSubmit}
-            className='w-full bg-[#000080] hover:bg-[#000066] text-sm md:text-base'
+            className='w-full bg-primary cursor-pointer hover:bg-[#000066] text-sm md:text-base'
             disabled={isSubmitting || selectedMeters.length === 0}>
             {isSubmitting ? (
               <>
@@ -505,14 +498,14 @@ export default function RecordAgentSale({
             <div className='relative'>
               <Button
                 onClick={handleDownloadReceipt}
-                className='w-full bg-[#2ECC40] hover:bg-[#28a035] text-white mt-4 text-sm md:text-base'>
+                className='w-full bg-[#2ECC40] hover:bg-[#28a035] text-white mt-4 cursor-pointer text-sm md:text-base'>
                 Download Sales Receipt
               </Button>
               <Button
                 onClick={() => setIsSubmitted(false)}
                 variant='ghost'
                 size='icon'
-                className='absolute -right-2 -top-2 h-6 w-6 rounded-full bg-gray-200 hover:bg-gray-300'
+                className='absolute cursor-pointer -right-2 -top-2 h-6 w-6 rounded-full bg-gray-200 hover:bg-gray-300'
                 aria-label='Dismiss'>
                 <X className='h-4 w-4' />
               </Button>

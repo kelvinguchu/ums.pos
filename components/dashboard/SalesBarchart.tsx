@@ -25,9 +25,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { getSalesChartData } from "@/lib/actions/sales";
 import NumberTicker from "@/components/ui/number-ticker";
 import { TrendingDown, BarChart as ChartIcon, ArrowRight } from "lucide-react";
+import { useSalesChartData } from "./hooks/useSalesChartData";
 
 interface SalesChartData {
   date: string;
@@ -129,80 +129,72 @@ const EmptyState = () => (
 
 export function SalesBarchart() {
   const [chartData, setChartData] = useState<ChartData[]>([]);
-  const [activeChart, setActiveChart] = useState<keyof typeof chartConfig>("integrated");
+  const [activeChart, setActiveChart] =
+    useState<keyof typeof chartConfig>("integrated");
   const [timePeriod, setTimePeriod] = useState<TimePeriod>("30d");
-  const [isLoading, setIsLoading] = useState(true);
   const [isMounted, setIsMounted] = useState(false);
+
+  // Calculate days based on time period
+  const days = useMemo(() => {
+    return TIME_PERIODS[timePeriod].days === 0
+      ? 3650 // All time (approx 10 years)
+      : TIME_PERIODS[timePeriod].days;
+  }, [timePeriod]);
+
+  // Use React Query hook for data fetching
+  const { data, isLoading, isError } = useSalesChartData(days);
 
   useEffect(() => {
     setIsMounted(true);
   }, []);
 
   useEffect(() => {
-    if (!isMounted) return; // Don't fetch data until component is mounted
-
-    async function fetchData() {
-      try {
-        setIsLoading(true);
-        const days = TIME_PERIODS[timePeriod].days;
-
-        const data: SalesChartData[] = days === 0
-          ? await getSalesChartData(3650) // Show all data (approx 10 years)
-          : await getSalesChartData(days);
-
-        if (!data || data.length === 0) {
-          setChartData([]);
-          return;
-        }
-
-        // Process data for chart
-        const processedData: { [key: string]: ChartData } = {};
-
-        data.forEach((row) => {
-          if (!processedData[row.date]) {
-            processedData[row.date] = {
-              date: row.date,
-            };
-            Object.keys(chartConfig).forEach((key) => {
-              processedData[row.date][key] = 0;
-            });
-          }
-
-          const chartKey = Object.keys(chartConfig).find(
-            (key) => key.toLowerCase() === row.meter_type.toLowerCase()
-          );
-
-          if (chartKey) {
-            processedData[row.date][chartKey] = row.total_amount;
-            processedData[row.date].user_sales = row.user_sales;
-          }
-        });
-
-        const sortedData = Object.values(processedData).sort(
-          (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
-        );
-
-        setChartData(sortedData);
-      } catch (error) {
-        if (error instanceof Error) {
-          console.error("Error fetching chart data:", error.message);
-        }
-      } finally {
-        setIsLoading(false);
-      }
+    if (!isMounted || !data || data.length === 0) {
+      setChartData([]);
+      return;
     }
 
-    fetchData();
-  }, [timePeriod, isMounted]);
+    // Process data for chart
+    const processedData: { [key: string]: ChartData } = {};
+
+    data.forEach((row) => {
+      if (!processedData[row.date]) {
+        processedData[row.date] = {
+          date: row.date,
+        };
+        Object.keys(chartConfig).forEach((key) => {
+          processedData[row.date][key] = 0;
+        });
+      }
+
+      const chartKey = Object.keys(chartConfig).find(
+        (key) => key.toLowerCase() === row.meter_type.toLowerCase()
+      );
+
+      if (chartKey) {
+        processedData[row.date][chartKey] = row.total_amount;
+        processedData[row.date].user_sales = row.user_sales;
+      }
+    });
+
+    const sortedData = Object.values(processedData).sort(
+      (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
+    );
+
+    setChartData(sortedData);
+  }, [data, isMounted]);
 
   const total = useMemo(() => {
-    return Object.keys(chartConfig).reduce((acc, key) => {
-      acc[key as keyof typeof chartConfig] = chartData.reduce(
-        (sum, day) => sum + ((day[key] as number) || 0),
-        0
-      );
-      return acc;
-    }, {} as Record<keyof typeof chartConfig, number>);
+    return Object.keys(chartConfig).reduce(
+      (acc, key) => {
+        acc[key as keyof typeof chartConfig] = chartData.reduce(
+          (sum, day) => sum + ((day[key] as number) || 0),
+          0
+        );
+        return acc;
+      },
+      {} as Record<keyof typeof chartConfig, number>
+    );
   }, [chartData]);
 
   const renderGradients = () => (
@@ -223,14 +215,13 @@ export function SalesBarchart() {
   );
 
   return (
-    <Card className="w-full h-full transition-all duration-200 ease-linear relative overflow-hidden">
+    <Card className='w-full h-full transition-all duration-200 ease-linear relative overflow-hidden'>
       <CardHeader className='flex flex-col items-stretch space-y-4 border-b p-4 lg:p-0 lg:space-y-0 lg:flex-row'>
         <div className='flex flex-1 flex-col justify-center gap-1 lg:px-6 lg:py-6'>
           <div className='flex items-center justify-between'>
-            <div className="mr-4">
+            <div className='mr-4'>
               <CardTitle>Sales Chart</CardTitle>
-              <CardDescription>
-              </CardDescription>
+              <CardDescription></CardDescription>
             </div>
             {isMounted ? (
               <Select
@@ -281,7 +272,7 @@ export function SalesBarchart() {
           ))}
         </div>
       </CardHeader>
-      <CardContent className='p-4 flex-1 w-full' style={{ height: '400px' }}>
+      <CardContent className='p-4 flex-1 w-full' style={{ height: "400px" }}>
         {isLoading ? (
           <div className='flex items-center justify-center h-full'>
             <div className='text-gray-500'>Loading chart data...</div>
@@ -309,10 +300,7 @@ export function SalesBarchart() {
                 }}
                 tick={{ fontSize: 12 }}
               />
-              <YAxis
-                tick={{ fontSize: 12 }}
-                width={40}
-              />
+              <YAxis tick={{ fontSize: 12 }} width={40} />
               <Tooltip content={<CustomTooltip />} />
               <Legend
                 wrapperStyle={{

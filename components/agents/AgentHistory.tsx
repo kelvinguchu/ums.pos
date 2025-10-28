@@ -23,17 +23,18 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { useAgentTransactions } from "./hooks/useAgentTransactions";
-import { Loader2, RefreshCw, Search, History } from "lucide-react";
+import { RefreshCw, Search, History } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
+import Loader from "@/components/ui/Loader";
 
 const EmptyState = () => (
   <div className='flex flex-col items-center justify-center p-8 text-gray-500'>
     <div className='relative'>
       <History className='w-12 h-12 mb-4 text-gray-400' />
       <span className='absolute -bottom-1 -right-1 flex h-3 w-3'>
-        <span className='animate-ping absolute inline-flex h-full w-full rounded-full bg-[#000080] opacity-75'></span>
-        <span className='relative inline-flex rounded-full h-3 w-3 bg-[#000080]'></span>
+        <span className='animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75'></span>
+        <span className='relative inline-flex rounded-full h-3 w-3 bg-primary'></span>
       </span>
     </div>
     <p className='text-sm font-medium'>No transaction history yet</p>
@@ -81,21 +82,20 @@ export default function AgentHistory() {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
 
-  const { data, isLoading, isError, error, refetch } = useAgentTransactions(
-    currentPage,
-    itemsPerPage,
-    searchTerm
-  );
+  const { data, isLoading, isError, error, refetch, isFetching } =
+    useAgentTransactions(currentPage, itemsPerPage, searchTerm);
 
   const handleRefresh = async () => {
     try {
-      await refetch();
+      await refetch({ cancelRefetch: false, throwOnError: true });
       toast.success("Transaction history refreshed");
     } catch (error) {
       console.error("Failed to refresh data:", error);
       toast.error("Failed to refresh data");
     }
   };
+
+  const isRefreshing = isFetching && !isLoading;
 
   const handleSearchChange = (value: string) => {
     setSearchTerm(value);
@@ -104,8 +104,8 @@ export default function AgentHistory() {
 
   if (isLoading) {
     return (
-      <div className='flex items-center justify-center h-64'>
-        <Loader2 className='w-6 h-6 animate-spin' />
+      <div className='relative flex items-center justify-center h-64'>
+        <Loader />
       </div>
     );
   }
@@ -143,8 +143,14 @@ export default function AgentHistory() {
             variant='outline'
             size='sm'
             onClick={handleRefresh}
-            className='gap-2'>
-            <RefreshCw className='w-4 h-4' />
+            className='gap-2'
+            disabled={isRefreshing}>
+            <RefreshCw
+              className={cn(
+                "w-4 h-4 transition-transform",
+                isRefreshing && "animate-spin"
+              )}
+            />
             Refresh
           </Button>
         </div>

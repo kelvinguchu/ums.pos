@@ -40,7 +40,7 @@ export const faultyMeterStatusEnum = pgEnum("faulty_meter_status", [
 
 // User Profiles Table
 export const userProfiles = pgTable("user_profiles", {
-  id: text("id").primaryKey(),
+  id: uuid("id").primaryKey(),
   name: text("name"),
   role: userRoleEnum("role").default("user"),
   is_active: boolean("is_active").default(true),
@@ -54,10 +54,10 @@ export const meters = pgTable("meters", {
   id: uuid("id").defaultRandom().primaryKey(),
   serial_number: text("serial_number").notNull().unique(),
   type: text("type").notNull(),
-  added_by: text("added_by").notNull(),
+  added_by: uuid("added_by").notNull(),
   added_at: timestamp("added_at").defaultNow(),
   adder_name: text("adder_name").notNull(),
-  batch_id: text("batch_id"),
+  batch_id: uuid("batch_id").references(() => meterPurchaseBatches.id),
 });
 
 // Agents Table
@@ -178,7 +178,7 @@ export const notifications = pgTable("notifications", {
   type: notificationTypeEnum("type").notNull(),
   message: text("message").notNull(),
   metadata: jsonb("metadata"),
-  created_by: text("created_by").notNull(),
+  created_by: uuid("created_by"),
   created_at: timestamp("created_at").defaultNow(),
   is_read: boolean("is_read").default(false),
   read_by: text("read_by").array(),
@@ -191,7 +191,7 @@ export const meterPurchaseBatches = pgTable("meter_purchase_batches", {
   quantity: integer("quantity").notNull(),
   total_cost: numeric("total_cost", { precision: 10, scale: 2 }).notNull(),
   purchase_date: timestamp("purchase_date").defaultNow(),
-  added_by: text("added_by").notNull(),
+  added_by: uuid("added_by"),
   created_at: timestamp("created_at").defaultNow(),
   batch_number: text("batch_number").unique().notNull(),
 });

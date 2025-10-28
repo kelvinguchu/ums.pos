@@ -27,34 +27,29 @@ export function UserProfileMenu({
   user,
   userRole,
   updateAuthState,
-}: UserProfileMenuProps) {
+}: Readonly<UserProfileMenuProps>) {
   const [isLoading, setIsLoading] = useState(false);
   const [showChangePasswordDialog, setShowChangePasswordDialog] =
     useState(false);
   const queryClient = useQueryClient();
 
   const handleLogout = async () => {
-    try {
-      setIsLoading(true);
+    setIsLoading(true);
 
-      queryClient.clear();
+    // Clear client state immediately
+    queryClient.clear();
+    updateAuthState({
+      user: null,
+      userRole: undefined,
+      isAuthenticated: false,
+      isLoading: false,
+    });
 
-      updateAuthState({
-        user: null,
-        userRole: undefined,
-        isAuthenticated: false,
-        isLoading: false,
-      });
+    // Sign out in the background (don't await)
+    signOut().catch((error) => console.error("Logout error:", error));
 
-      await signOut();
-
-      globalThis.window.location.href = "/signin";
-    } catch (error) {
-      console.error("Logout error:", error);
-      globalThis.window.location.href = "/signin";
-    } finally {
-      setIsLoading(false);
-    }
+    // Navigate immediately - the middleware will handle the rest
+    globalThis.window.location.href = "/signin";
   };
 
   const getRoleBadgeColor = () => {
@@ -69,10 +64,10 @@ export function UserProfileMenu({
         <PopoverTrigger asChild>
           <Button
             variant='ghost'
-            className='relative flex items-center gap-2 rounded-full px-3 py-2 bg-gradient-to-r from-[#000080]/10 to-blue-500/10 hover:from-[#000080]/20 hover:to-blue-500/20 transition-all duration-200'
+            className='relative flex items-center gap-2 rounded-full px-3 py-2 bg-gradient-to-r from-primary/10 to-blue-500/10 hover:from-primary/20 hover:to-blue-500/20 transition-all duration-200'
             id='user-profile-button'>
-            <User className='h-4 w-4 text-[#000080]' />
-            <span className='text-sm font-medium text-[#000080]'>
+            <User className='h-4 w-4 text-primary' />
+            <span className='text-sm font-medium text-primary'>
               {user?.name?.split(" ")[0]}
             </span>
           </Button>

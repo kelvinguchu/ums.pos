@@ -15,6 +15,7 @@ import {
   EyeOff,
   Search,
 } from "lucide-react";
+import Loader from "@/components/ui/Loader";
 import {
   Table,
   TableBody,
@@ -53,9 +54,7 @@ import {
 import { cn } from "@/lib/utils";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { Loader2 } from "lucide-react";
-import { changePassword } from "@/lib/actions/users";
-import { adminChangePassword } from "@/lib/actions/serverActions";
+import { changePassword, adminChangePassword } from "@/lib/actions/users";
 import { useQueryClient } from "@tanstack/react-query";
 
 export default function UsersPage() {
@@ -76,8 +75,15 @@ export default function UsersPage() {
   const itemsPerPage = 10;
   const queryClient = useQueryClient();
 
-  const { users, currentUser, isLoading, error, updateUser, refetch } =
-    useUsersData(showDeactivated);
+  const {
+    users,
+    currentUser,
+    isLoading,
+    isFetching,
+    error,
+    updateUser,
+    refetch,
+  } = useUsersData(showDeactivated);
 
   const handleUpdateName = async () => {
     if (!editingUser || !newName.trim()) {
@@ -214,12 +220,15 @@ export default function UsersPage() {
   // Add refresh handler
   const handleRefresh = async () => {
     try {
-      await refetch();
+      await refetch({ throwOnError: true });
       toast.success("Users list refreshed");
     } catch (error) {
+      console.error("Failed to refresh users data:", error);
       toast.error("Failed to refresh data");
     }
   };
+
+  const isRefreshing = isFetching && !isLoading;
 
   if (error) {
     return (
@@ -235,8 +244,8 @@ export default function UsersPage() {
 
   if (isLoading) {
     return (
-      <div className='flex items-center justify-center min-h-[60vh]'>
-        <Loader2 className='h-8 w-8 animate-spin text-gray-600' />
+      <div className='relative flex items-center justify-center min-h-[60vh]'>
+        <Loader />
       </div>
     );
   }
@@ -320,8 +329,15 @@ export default function UsersPage() {
               variant='outline'
               size='icon'
               onClick={handleRefresh}
-              className='hover:bg-gray-100'>
-              <RefreshCw className='h-4 w-4' />
+              className='hover:bg-gray-100'
+              disabled={isLoading || isRefreshing}
+              aria-label='Refresh users list'>
+              <RefreshCw
+                className={cn(
+                  "h-4 w-4 transition-transform",
+                  (isLoading || isRefreshing) && "animate-spin"
+                )}
+              />
             </Button>
             <div className='text-sm text-muted-foreground font-medium'>
               Total: {filteredAndPaginatedUsers().totalUsers} users
@@ -365,7 +381,7 @@ export default function UsersPage() {
                         {user.id === currentUser?.id && (
                           <Badge
                             variant='secondary'
-                            className='bg-[#000080] text-white'>
+                            className='bg-primary text-white'>
                             You
                           </Badge>
                         )}
@@ -558,7 +574,7 @@ export default function UsersPage() {
                         {user.id === currentUser?.id && (
                           <Badge
                             variant='secondary'
-                            className='bg-[#000080] text-white'>
+                            className='bg-primary text-white'>
                             You
                           </Badge>
                         )}

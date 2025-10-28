@@ -98,7 +98,7 @@ export function BatchDetailsSection({
       ) : (
         <Button
           onClick={() => onDialogOpenChange(true)}
-          className='w-full bg-[#000080] hover:bg-[#000066] mb-4'>
+          className='w-full bg-primary hover:bg-[#000066] mb-4'>
           Add Purchase Details
         </Button>
       )}

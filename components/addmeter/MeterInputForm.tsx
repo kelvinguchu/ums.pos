@@ -10,11 +10,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { toast } from "sonner";
-import {
-  checkMeterExistsInSoldMeters,
-  checkMeterExistsInAgentInventory,
-} from "@/lib/actions/meters";
 
 interface MeterInputFormProps {
   serialNumber: string;
@@ -25,7 +20,6 @@ interface MeterInputFormProps {
   isChecking: boolean;
   exists: boolean;
   errorMessage: string | React.ReactNode;
-  onExistsChange: (exists: boolean, message?: string) => void;
 }
 
 export const MeterInputForm = memo(function MeterInputForm({
@@ -37,7 +31,6 @@ export const MeterInputForm = memo(function MeterInputForm({
   isChecking,
   exists,
   errorMessage,
-  onExistsChange,
 }: MeterInputFormProps) {
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -46,39 +39,6 @@ export const MeterInputForm = memo(function MeterInputForm({
       inputRef.current.focus();
     }
   }, []);
-
-  useEffect(() => {
-    const checkMeterStatus = async () => {
-      if (!serialNumber.trim()) return;
-
-      try {
-        // Check in sold_meters
-        const existsInSoldMeters =
-          await checkMeterExistsInSoldMeters(serialNumber);
-        if (existsInSoldMeters) {
-          onExistsChange(true, "Meter already exists in sold meters");
-          return;
-        }
-
-        // Check in agent_inventory
-        const existsInAgentInventory =
-          await checkMeterExistsInAgentInventory(serialNumber);
-        if (existsInAgentInventory) {
-          onExistsChange(true, "Meter already exists in agent inventory");
-          return;
-        }
-
-        // If not found in either table, reset exists state
-        onExistsChange(false);
-      } catch (error) {
-        console.error("Error checking meter status:", error);
-        toast.error("Failed to check meter status");
-      }
-    };
-
-    const timeoutId = setTimeout(checkMeterStatus, 300);
-    return () => clearTimeout(timeoutId);
-  }, [serialNumber, onExistsChange]);
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter" && !exists) {
@@ -89,11 +49,15 @@ export const MeterInputForm = memo(function MeterInputForm({
 
   let statusContent;
   if (isChecking) {
-    statusContent = <p className='text-sm text-gray-500'>Checking serial number...</p>;
+    statusContent = (
+      <p className='text-sm text-gray-500'>Checking serial number...</p>
+    );
   } else if (errorMessage) {
     statusContent = <div className='text-sm text-red-500'>{errorMessage}</div>;
   } else if (serialNumber.trim() && !exists) {
-    statusContent = <p className='text-sm text-green-500'>Serial number is available</p>;
+    statusContent = (
+      <p className='text-sm text-green-500'>Serial number is available</p>
+    );
   } else {
     statusContent = null;
   }
@@ -129,14 +93,13 @@ export const MeterInputForm = memo(function MeterInputForm({
           </SelectContent>
         </Select>
         <Button
+          className='cursor-pointer'
           onClick={onAddMeter}
           disabled={!serialNumber || isChecking || exists}>
           Add Meter
         </Button>
       </div>
-      <div className='h-6'>
-        {statusContent}
-      </div>
+      <div className='h-6'>{statusContent}</div>
     </div>
   );
 });

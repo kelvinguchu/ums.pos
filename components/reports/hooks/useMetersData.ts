@@ -1,9 +1,6 @@
 import { useState, useCallback, useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import {
-  getAllMetersWithStatus,
-  MeterWithStatus,
-} from "@/lib/actions/exports";
+import { getAllMetersWithStatus, MeterWithStatus } from "@/lib/actions/exports";
 
 // Define query keys
 const QUERY_KEYS = {
@@ -40,7 +37,7 @@ export function useMetersData(initialPageSize: number = 20) {
   ];
 
   // The main query
-  const { data, isLoading, error, refetch } = useQuery({
+  const { data, isLoading, isFetching, error, refetch } = useQuery({
     queryKey,
     queryFn: async () => {
       const filterStatus = statusFilter === "all" ? undefined : statusFilter;
@@ -178,15 +175,19 @@ export function useMetersData(initialPageSize: number = 20) {
   }, [statusFilter, isLoading, searchTerm, typeFilter, pageSize, queryClient]);
 
   // Function to manually invalidate cache and refetch
-  const invalidateAndRefetch = useCallback(() => {
-    // Invalidate all queries related to meters
-    queryClient.invalidateQueries({
-      queryKey: [QUERY_KEYS.allMeters],
-    });
+  const invalidateAndRefetch = useCallback(
+    async (options?: { throwOnError?: boolean }) => {
+      await queryClient.invalidateQueries({
+        queryKey: [QUERY_KEYS.allMeters],
+      });
 
-    // Then refetch current data
-    refetch();
-  }, [queryClient, refetch]);
+      return refetch({
+        cancelRefetch: false,
+        throwOnError: options?.throwOnError ?? false,
+      });
+    },
+    [queryClient, refetch]
+  );
 
   const handlePageChange = (newPage: number) => {
     setPage(newPage);
@@ -216,6 +217,7 @@ export function useMetersData(initialPageSize: number = 20) {
     meters: data?.meters || [],
     totalCount: data?.totalCount || 0,
     isLoading,
+    isFetching,
     error,
     refetch: invalidateAndRefetch, // Use our enhanced refetch function
     pagination: {

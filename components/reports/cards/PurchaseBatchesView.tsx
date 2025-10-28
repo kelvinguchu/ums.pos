@@ -1,4 +1,4 @@
-import { getPurchaseBatches } from "@/lib/actions/meters";
+import { getPurchaseBatches } from "@/lib/actions/reports";
 import {
   Table,
   TableBody,
@@ -8,12 +8,11 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { format } from "date-fns";
+import { format, isSameDay, startOfDay } from "date-fns";
 import { useQuery } from "@tanstack/react-query";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { RefreshCw, X, Loader2 } from "lucide-react";
+import { RefreshCw, X, Loader2, CalendarIcon } from "lucide-react";
 import { toast } from "sonner";
 import {
   Select,
@@ -22,8 +21,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { DatePicker } from "@/components/ui/date-picker";
-import { CalendarDate } from "@internationalized/date";
+import { Calendar } from "@/components/ui/calendar";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import {
   Pagination,
   PaginationContent,
@@ -34,7 +37,7 @@ import {
   PaginationPrevious,
 } from "@/components/ui/pagination";
 import { useState, Fragment } from "react";
-import Loader from "@/components/ui/Loader";
+import { cn } from "@/lib/utils";
 
 interface PurchaseBatch {
   id: string;
@@ -43,10 +46,9 @@ interface PurchaseBatch {
   quantity: number;
   total_cost: string;
   purchase_date: Date | null;
-  added_by: string;
+  added_by: string | null;
   created_at: Date | null;
   remaining_meters: number;
-  user_name: string | null;
   user_profiles: {
     name: string | null;
   } | null;
@@ -54,22 +56,52 @@ interface PurchaseBatch {
 
 // Update sorting function
 const sortBatches = (batches: PurchaseBatch[]) => {
+  const getTimestamp = (batch: PurchaseBatch) => {
+    const purchase = batch.purchase_date
+      ? new Date(batch.purchase_date).getTime()
+      : null;
+    const created = batch.created_at
+      ? new Date(batch.created_at).getTime()
+      : null;
+
+    return purchase ?? created ?? 0;
+  };
+
   return [...batches].sort((a, b) => {
-    // Sort by remaining meters (highest first)
+    const timeDiff = getTimestamp(b) - getTimestamp(a);
+    if (timeDiff !== 0) {
+      return timeDiff;
+    }
+
+    // Fallback to remaining meters if timestamps are identical
     return b.remaining_meters - a.remaining_meters;
   });
+};
+
+const remainingBadgeClass = (remaining: number, quantity: number) => {
+  if (remaining <= 0) {
+    return "bg-red-100 text-red-800 border-transparent";
+  }
+
+  if (quantity > 0 && remaining < quantity * 0.2) {
+    return "bg-amber-100 text-amber-800 border-transparent";
+  }
+
+  return "bg-emerald-100 text-emerald-800 border-transparent";
 };
 
 export default function PurchaseBatchesView() {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedType, setSelectedType] = useState("");
-  const [selectedDate, setSelectedDate] = useState<CalendarDate | null>(null);
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
   const [currentPage, setCurrentPage] = useState(1);
+  const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const itemsPerPage = 5;
 
   const {
-    data: batches,
+    data: batches = [],
     isLoading,
+    isFetching,
     error,
     refetch,
   } = useQuery<PurchaseBatch[]>({
@@ -81,13 +113,15 @@ export default function PurchaseBatchesView() {
 
   const handleRefresh = async () => {
     try {
-      await refetch();
+      await refetch({ throwOnError: true });
       toast.success("Purchase batches data refreshed");
     } catch (err) {
       console.error("Failed to refresh data:", err);
       toast.error("Failed to refresh data");
     }
   };
+
+  const isRefreshing = isFetching && !isLoading;
 
   if (error) {
     return (
@@ -97,7 +131,7 @@ export default function PurchaseBatchesView() {
     );
   }
 
-  if (!batches || batches.length === 0) {
+  if (!isLoading && batches.length === 0) {
     return (
       <div className='flex items-center justify-center p-4'>
         No purchase batches found
@@ -107,7 +141,7 @@ export default function PurchaseBatchesView() {
 
   // Filter batches
   let filteredBatches =
-    batches?.filter((batch: PurchaseBatch) => {
+    batches.filter((batch: PurchaseBatch) => {
       const matchesSearch =
         searchTerm === "" ||
         batch.batch_number.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -117,13 +151,18 @@ export default function PurchaseBatchesView() {
 
       const matchesType =
         selectedType === "" ||
+        !selectedType ||
+        selectedType === "all" ||
         batch.meter_type.toLowerCase() === selectedType.toLowerCase();
 
+      // Improved date filtering - normalize both dates to start of day
       const matchesDate =
         !selectedDate ||
         (batch.purchase_date &&
-          format(new Date(batch.purchase_date), "yyyy-MM-dd") ===
-            `${selectedDate.year}-${String(selectedDate.month).padStart(2, "0")}-${String(selectedDate.day).padStart(2, "0")}`);
+          isSameDay(
+            startOfDay(new Date(batch.purchase_date)),
+            startOfDay(selectedDate)
+          ));
 
       return matchesSearch && matchesType && matchesDate;
     }) || [];
@@ -138,37 +177,48 @@ export default function PurchaseBatchesView() {
   const currentBatches = filteredBatches.slice(startIndex, endIndex);
 
   const hasActiveFilters = () => {
-    return searchTerm || selectedType || selectedDate;
+    return Boolean(
+      searchTerm || (selectedType && selectedType !== "all") || selectedDate
+    );
   };
 
   const clearFilters = () => {
     setSearchTerm("");
     setSelectedType("");
-    setSelectedDate(null);
+    setSelectedDate(undefined);
     setCurrentPage(1);
   };
 
   return (
-    <Card className='mt-6'>
-      <CardHeader className='p-4 md:p-6'>
-        <div className='flex justify-between items-center'>
-          <CardTitle className='text-lg md:text-xl'>Purchase Batches</CardTitle>
+    <div className='flex flex-col h-full overflow-hidden'>
+      {/* Header - aligned with Sheet close button */}
+      <div className='flex-none bg-gray-50 pb-4 pt-2 px-6 border-b border-gray-200'>
+        <div className='flex justify-between items-center mb-4 pr-12'>
+          <h2 className='text-2xl font-bold'>Purchase Batches</h2>
           <Button
             variant='outline'
             size='icon'
             onClick={handleRefresh}
+            disabled={isLoading || isRefreshing}
+            aria-label='Refresh purchase batch data'
             className='hover:bg-gray-100'>
-            <RefreshCw className='h-4 w-4' />
+            <RefreshCw
+              className={cn(
+                "h-4 w-4 transition-transform",
+                (isLoading || isRefreshing) && "animate-spin"
+              )}
+            />
           </Button>
         </div>
-      </CardHeader>
+      </div>
 
-      <CardContent>
+      {/* Scrollable Content */}
+      <div className='flex-1 overflow-y-auto px-6 py-4'>
         {isLoading ? (
           <div className='flex justify-center items-center min-h-[200px]'>
             <div>
-                    <Loader2 className='h-3 w-3 animate-spin' />
-                  </div>
+              <Loader2 className='h-3 w-3 animate-spin' />
+            </div>
           </div>
         ) : (
           <>
@@ -180,13 +230,21 @@ export default function PurchaseBatchesView() {
                     type='text'
                     placeholder='Search by batch number or user...'
                     value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
+                    onChange={(e) => {
+                      setSearchTerm(e.target.value);
+                      setCurrentPage(1);
+                    }}
                     className='w-[200px]'
                   />
 
-                  <Select value={selectedType} onValueChange={setSelectedType}>
+                  <Select
+                    value={selectedType || undefined}
+                    onValueChange={(value) => {
+                      setSelectedType(value);
+                      setCurrentPage(1);
+                    }}>
                     <SelectTrigger className='w-[140px]'>
-                      <SelectValue>{selectedType || "Meter Type"}</SelectValue>
+                      <SelectValue placeholder='Meter Type' />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value='all'>All Types</SelectItem>
@@ -199,12 +257,34 @@ export default function PurchaseBatchesView() {
                     </SelectContent>
                   </Select>
 
-                  <div className='w-[130px]'>
-                    <DatePicker
-                      value={selectedDate}
-                      onChange={setSelectedDate}
-                    />
-                  </div>
+                  <Popover
+                    open={isCalendarOpen}
+                    onOpenChange={setIsCalendarOpen}>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant='outline'
+                        className='w-[200px] justify-start text-left font-normal'>
+                        <CalendarIcon className='mr-2 h-4 w-4' />
+                        {selectedDate ? (
+                          format(selectedDate, "PPP")
+                        ) : (
+                          <span>Pick a date</span>
+                        )}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className='w-auto p-0' align='start'>
+                      <Calendar
+                        mode='single'
+                        selected={selectedDate}
+                        onSelect={(date) => {
+                          setSelectedDate(date);
+                          setCurrentPage(1);
+                          setIsCalendarOpen(false);
+                        }}
+                        autoFocus
+                      />
+                    </PopoverContent>
+                  </Popover>
 
                   {hasActiveFilters() && (
                     <Button
@@ -234,63 +314,75 @@ export default function PurchaseBatchesView() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {currentBatches.map((batch: PurchaseBatch) => {
-                    let variant: "default" | "destructive" | "secondary";
-                    if (batch.remaining_meters === 0) {
-                      variant = "destructive";
-                    } else if (batch.remaining_meters < batch.quantity * 0.2) {
-                      variant = "secondary";
-                    } else {
-                      variant = "default";
-                    }
-                    return (
-                      <TableRow key={batch.id}>
-                        <TableCell>
-                          <Badge variant='outline'>{batch.batch_number}</Badge>
-                        </TableCell>
-                        <TableCell className='font-medium'>
-                          {batch.meter_type.charAt(0).toUpperCase() +
-                            batch.meter_type.slice(1)}
-                        </TableCell>
-                        <TableCell>{batch.quantity}</TableCell>
-                        <TableCell>
-                          <Badge variant={variant}>
-                            {batch.remaining_meters}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          <div className='space-y-1'>
-                            <div>
-                              Total:{" "}
-                              {Number.parseFloat(
-                                batch.total_cost
-                              ).toLocaleString()}
+                  {currentBatches.length === 0 ? (
+                    <TableRow>
+                      <TableCell
+                        colSpan={7}
+                        className='text-center py-8 text-muted-foreground'>
+                        No batches found matching the selected filters
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    currentBatches.map((batch: PurchaseBatch) => {
+                      return (
+                        <TableRow key={batch.id}>
+                          <TableCell>
+                            <Badge variant='outline'>
+                              {batch.batch_number}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className='font-medium'>
+                            {batch.meter_type.charAt(0).toUpperCase() +
+                              batch.meter_type.slice(1)}
+                          </TableCell>
+                          <TableCell>{batch.quantity}</TableCell>
+                          <TableCell>
+                            <Badge
+                              variant='outline'
+                              className={cn(
+                                "min-w-[40px] justify-center",
+                                remainingBadgeClass(
+                                  batch.remaining_meters,
+                                  batch.quantity
+                                )
+                              )}>
+                              {batch.remaining_meters}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            <div className='space-y-1'>
+                              <div>
+                                Total:{" "}
+                                {Number.parseFloat(
+                                  batch.total_cost
+                                ).toLocaleString()}
+                              </div>
+                              <div className='text-sm text-muted-foreground'>
+                                Unit:{" "}
+                                {(
+                                  Number.parseFloat(batch.total_cost) /
+                                  batch.quantity
+                                ).toLocaleString(undefined, {
+                                  maximumFractionDigits: 2,
+                                })}
+                              </div>
                             </div>
-                            <div className='text-sm text-muted-foreground'>
-                              Unit:{" "}
-                              {(
-                                Number.parseFloat(batch.total_cost) /
-                                batch.quantity
-                              ).toLocaleString(undefined, {
-                                maximumFractionDigits: 2,
-                              })}
-                            </div>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          {batch.purchase_date
-                            ? format(
-                                new Date(batch.purchase_date),
-                                "dd/MM/yyyy"
-                              )
-                            : "N/A"}
-                        </TableCell>
-                        <TableCell>
-                          {batch.user_profiles?.name || "Unknown User"}
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })}
+                          </TableCell>
+                          <TableCell>
+                            {batch.purchase_date
+                              ? format(
+                                  new Date(batch.purchase_date),
+                                  "dd/MM/yyyy"
+                                )
+                              : "N/A"}
+                          </TableCell>
+                          <TableCell>
+                            {batch.user_profiles?.name || "Unknown User"}
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })
+                  )}
                 </TableBody>
               </Table>
             </div>
@@ -353,7 +445,7 @@ export default function PurchaseBatchesView() {
             </div>
           </>
         )}
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }

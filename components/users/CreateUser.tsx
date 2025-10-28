@@ -134,7 +134,7 @@ const CreateUser = ({ onClose }: { onClose: () => void }) => {
         </Select>
         <Button
           type='submit'
-          className='w-full bg-[#000080] hover:bg-[#000061] text-white'
+          className='w-full bg-primary hover:bg-[#000061] text-white'
           disabled={isLoading}>
           {isLoading ? (
             <>

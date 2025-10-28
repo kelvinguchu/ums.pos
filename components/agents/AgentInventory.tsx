@@ -120,8 +120,8 @@ export default function AgentInventory({ agentId }: AgentInventoryProps) {
       {/* Meter Count Summary */}
       <div className='mb-6 p-4 bg-white rounded-lg border shadow-sm'>
         <div className='flex items-center gap-2 mb-3'>
-          <Package className='h-5 w-5 text-[#000080]' />
-          <h3 className='text-lg font-semibold text-[#000080]'>
+          <Package className='h-5 w-5 text-primary' />
+          <h3 className='text-lg font-semibold text-primary'>
             Total Meters: {inventory.length}
           </h3>
         </div>
@@ -135,7 +135,7 @@ export default function AgentInventory({ agentId }: AgentInventoryProps) {
       </div>
 
       <div className='relative mb-4'>
-        <Search className='absolute left-2 top-2.5 h-4 w-4 text-[#000080]' />
+        <Search className='absolute left-2 top-2.5 h-4 w-4 text-primary' />
         <Input
           placeholder='Search by serial number...'
           value={searchTerm}
@@ -152,11 +152,11 @@ export default function AgentInventory({ agentId }: AgentInventoryProps) {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead className='text-[#000080]'>
+                    <TableHead className='text-primary'>
                       Serial Number
                     </TableHead>
-                    <TableHead className='text-[#000080]'>Type</TableHead>
-                    <TableHead className='text-[#000080]'>
+                    <TableHead className='text-primary'>Type</TableHead>
+                    <TableHead className='text-primary'>
                       Assigned Date
                     </TableHead>
                   </TableRow>
@@ -166,7 +166,7 @@ export default function AgentInventory({ agentId }: AgentInventoryProps) {
                     <TableRow>
                       <TableCell
                         colSpan={3}
-                        className='text-center py-8 text-[#000080]'>
+                        className='text-center py-8 text-primary'>
                         Loading inventory...
                       </TableCell>
                     </TableRow>
@@ -174,7 +174,7 @@ export default function AgentInventory({ agentId }: AgentInventoryProps) {
                     <TableRow>
                       <TableCell
                         colSpan={3}
-                        className='text-center py-8 text-[#000080]'>
+                        className='text-center py-8 text-primary'>
                         {searchTerm
                           ? "No meters found matching search"
                           : "No meters assigned"}
@@ -204,10 +204,10 @@ export default function AgentInventory({ agentId }: AgentInventoryProps) {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead className='text-[#000080]'>
+                    <TableHead className='text-primary'>
                       Serial Number
                     </TableHead>
-                    <TableHead className='text-[#000080] text-right'>
+                    <TableHead className='text-primary text-right'>
                       Details
                     </TableHead>
                   </TableRow>
@@ -217,7 +217,7 @@ export default function AgentInventory({ agentId }: AgentInventoryProps) {
                     <TableRow>
                       <TableCell
                         colSpan={2}
-                        className='text-center py-8 text-[#000080]'>
+                        className='text-center py-8 text-primary'>
                         Loading inventory...
                       </TableCell>
                     </TableRow>
@@ -225,7 +225,7 @@ export default function AgentInventory({ agentId }: AgentInventoryProps) {
                     <TableRow>
                       <TableCell
                         colSpan={2}
-                        className='text-center py-8 text-[#000080]'>
+                        className='text-center py-8 text-primary'>
                         {searchTerm
                           ? "No meters found matching search"
                           : "No meters assigned"}

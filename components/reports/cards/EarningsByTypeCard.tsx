@@ -20,7 +20,7 @@ export function EarningsByTypeCard({ earnings }: EarningsByTypeCardProps) {
     <Card className='shadow-md hover:shadow-xl'>
       <CardHeader className='flex flex-row items-center justify-between p-4 md:p-6'>
         <CardTitle className='text-lg md:text-xl'>Earnings by Type</CardTitle>
-        <BarChart3 className='w-5 h-5 text-[#000080]' />
+        <BarChart3 className='w-5 h-5 text-primary' />
       </CardHeader>
       <CardContent className='p-4 md:p-6'>
         {earnings.length > 0 ? (

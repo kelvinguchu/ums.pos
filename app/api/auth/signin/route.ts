@@ -2,7 +2,6 @@ import { createClient } from "@/lib/utils/supabase/server";
 import { NextResponse } from "next/server";
 
 export async function POST(request: Request) {
-  const requestUrl = new URL(request.url);
   const formData = await request.formData();
   const email = formData.get("email") as string;
   const password = formData.get("password") as string;
@@ -27,7 +26,6 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: error.message }, { status: 400 });
   }
 
-  return NextResponse.redirect(requestUrl.origin, {
-    status: 301,
-  });
+  // Return success - let the client handle navigation
+  return NextResponse.json({ success: true }, { status: 200 });
 }

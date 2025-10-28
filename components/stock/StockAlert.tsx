@@ -41,9 +41,10 @@ export function StockAlert() {
 
   // Move useQuery hook before the conditional return
   const { data: stockLevels = [] } = useQuery({
-    queryKey: ["remainingMetersByType"],
+    queryKey: ["remainingMeters"], // Match the prefetch key
     queryFn: getRemainingMetersByType,
     staleTime: 1000 * 60 * 5, // 5 minutes
+    gcTime: 1000 * 60 * 10, // 10 minutes in cache
   });
 
   // Local state for form values

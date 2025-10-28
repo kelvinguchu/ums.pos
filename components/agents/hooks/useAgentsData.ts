@@ -55,6 +55,7 @@ export function useAgentsData() {
   const {
     data: agents = [],
     isLoading,
+    isFetching,
     isError,
     error,
     refetch,
@@ -89,6 +90,7 @@ export function useAgentsData() {
       currentUser,
     },
     isLoading,
+    isFetching,
     isError,
     error,
     refetch,

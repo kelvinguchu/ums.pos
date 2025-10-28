@@ -18,9 +18,9 @@ interface User {
 
 // Query keys
 const USERS_KEYS = {
-  all: ['users'] as const,
-  lists: () => [...USERS_KEYS.all, 'list'] as const,
-  current: () => [...USERS_KEYS.all, 'current'] as const,
+  all: ["users"] as const,
+  lists: () => [...USERS_KEYS.all, "list"] as const,
+  current: () => [...USERS_KEYS.all, "current"] as const,
 } as const;
 
 // 30 minutes stale time since user data doesn't change frequently
@@ -36,6 +36,7 @@ export function useUsersData(showDeactivated: boolean) {
   const {
     data: users = [],
     isLoading,
+    isFetching,
     error,
     refetch,
   } = useQuery({
@@ -43,10 +44,8 @@ export function useUsersData(showDeactivated: boolean) {
     queryFn: () => getUsersList(),
     staleTime: STALE_TIME, // Data will be considered fresh for 30 minutes
     gcTime: STALE_TIME * 2, // Cache will be kept for 1 hour
-    select: (data) => 
-      showDeactivated 
-        ? data 
-        : data.filter(user => user.isActive),
+    select: (data) =>
+      showDeactivated ? data : data.filter((user) => user.isActive),
   });
 
   // Query for current user
@@ -59,7 +58,13 @@ export function useUsersData(showDeactivated: boolean) {
 
   // Mutation for updating user
   const { mutateAsync: updateUser, isPending } = useMutation({
-    mutationFn: async ({ userId, updates }: { userId: string; updates: any }) => {
+    mutationFn: async ({
+      userId,
+      updates,
+    }: {
+      userId: string;
+      updates: any;
+    }) => {
       const result = await updateUserProfile(userId, updates);
       return result;
     },
@@ -80,11 +85,16 @@ export function useUsersData(showDeactivated: boolean) {
     users,
     currentUser,
     isLoading,
+    isFetching,
     error,
     updateUser,
     isPending,
-    refetch,
+    refetch: (options?: { throwOnError?: boolean }) =>
+      refetch({
+        cancelRefetch: false,
+        throwOnError: options?.throwOnError ?? false,
+      }),
     deleteUser: deleteUserMutation.mutate,
     isDeleting: deleteUserMutation.isPending,
   };
-} 
+}

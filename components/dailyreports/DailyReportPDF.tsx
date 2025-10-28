@@ -8,6 +8,11 @@ import {
   Font,
 } from "@react-pdf/renderer";
 import { format } from "date-fns";
+import type {
+  AgentInventory,
+  RemainingMetersByType,
+  SaleWithMeters,
+} from "./types";
 
 Font.register({
   family: "GeistMono",
@@ -100,37 +105,11 @@ const styles = StyleSheet.create({
   },
 });
 
-interface MeterDetail {
-  batch_id: string;
-  serial_number: string;
-  recipient: string;
-  destination: string;
-  customer_type: string | null;
-  customer_county: string | null;
-  customer_contact: string | null;
-}
-
-interface SaleWithMeters {
-  id: string;
-  user_name: string;
-  meter_type: string;
-  batch_amount: number;
-  unit_price: number;
-  total_price: number;
-  destination: string;
-  recipient: string;
-  customer_type: string | null;
-  customer_county: string | null;
-  customer_contact: string | null;
-  sale_date: Date | null;
-  meters: MeterDetail[];
-}
-
 interface DailyReportPDFProps {
   todaySales: SaleWithMeters[];
   yesterdaySales: SaleWithMeters[];
-  remainingMetersByType: any[];
-  agentInventory: any[];
+  remainingMetersByType: RemainingMetersByType[];
+  agentInventory: AgentInventory[];
   todayTotalEarnings: number;
   yesterdayTotalEarnings: number;
 }

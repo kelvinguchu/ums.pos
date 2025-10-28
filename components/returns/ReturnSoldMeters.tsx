@@ -18,6 +18,7 @@ import { X, Loader2 } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface ReturnSoldMetersProps {
   currentUser: {
@@ -263,10 +264,10 @@ export default function ReturnSoldMeters({
   };
 
   return (
-    <div className='bg-white rounded-lg p-6'>
-      <div className='flex flex-col min-h-[600px]'>
-        <div className='flex-1'>
-          <div className='space-y-4 mb-6'>
+    <div className='flex h-full flex-col pr-4'>
+      <ScrollArea className='flex-1'>
+        <div className='bg-white rounded-lg p-6 space-y-6'>
+          <div className='space-y-4'>
             <Input
               ref={serialInputRef}
               type='text'
@@ -288,7 +289,7 @@ export default function ReturnSoldMeters({
             <>
               <Button
                 onClick={handleReturnMeters}
-                className='w-full bg-[#000080] hover:bg-[#000066] text-white mb-6'
+                className='w-full bg-primary hover:bg-[#000066] text-white'
                 disabled={isSubmitting}>
                 {isSubmitting ? (
                   <>
@@ -302,8 +303,8 @@ export default function ReturnSoldMeters({
                 )}
               </Button>
 
-              <div className='mt-6'>
-                <div className='flex justify-between items-center mb-2'>
+              <div className='space-y-4'>
+                <div className='flex justify-between items-center'>
                   <h3 className='text-lg font-semibold text-gray-700'>
                     Meters to Return
                   </h3>
@@ -417,7 +418,7 @@ export default function ReturnSoldMeters({
             </>
           )}
         </div>
-      </div>
+      </ScrollArea>
     </div>
   );
 }

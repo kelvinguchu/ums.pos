@@ -2,21 +2,20 @@
 
 import React, {
   createContext,
+  useCallback,
   useContext,
   useEffect,
-  useState,
-  useCallback,
   useMemo,
 } from "react";
 import {
-  getNotifications,
   markNotificationAsRead,
   markAllNotificationsAsRead,
   getUnreadNotificationsCount,
 } from "@/lib/actions/notifications";
 import { subscribeToNotifications } from "@/lib/services/notificationsClient";
-import { getCurrentUser } from "@/lib/actions/users";
+import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 interface Notification {
   id: string;
@@ -29,20 +28,89 @@ interface Notification {
   is_read: boolean;
 }
 
-interface NotificationCache {
-  notifications: Notification[];
-  hasMore: boolean;
-  lastFetched: number;
-}
+type MeterSaleMetadata = {
+  batchId: number;
+  meterType: string;
+  batchAmount: number;
+  destination: string;
+  recipient: string;
+  totalPrice: string | number;
+  unitPrice: string | number;
+  customerType: string;
+  customerCounty: string;
+  customerContact: string;
+};
+
+const isMeterSaleMetadata = (
+  metadata: unknown
+): metadata is MeterSaleMetadata => {
+  return (
+    typeof metadata === "object" &&
+    metadata !== null &&
+    "recipient" in metadata &&
+    "destination" in metadata &&
+    "totalPrice" in metadata &&
+    "unitPrice" in metadata
+  );
+};
+
+const buildNotificationDescription = (notification: Notification) => {
+  if (
+    notification.type === "METER_SALE" &&
+    isMeterSaleMetadata(notification.metadata)
+  ) {
+    const metadata = notification.metadata;
+    const totalPriceNumber = Number(metadata.totalPrice);
+    const unitPriceNumber = Number(metadata.unitPrice);
+
+    return (
+      <div className='space-y-1 text-left'>
+        <div>
+          <span className='font-medium'>Recipient:</span> {metadata.recipient}
+        </div>
+        <div>
+          <span className='font-medium'>Destination:</span>{" "}
+          {metadata.destination}
+        </div>
+        <div>
+          <span className='font-medium'>Contact:</span>{" "}
+          {metadata.customerContact || "N/A"}
+        </div>
+        <div>
+          <span className='font-medium'>County:</span>{" "}
+          {metadata.customerCounty || "N/A"}
+        </div>
+        <div>
+          <span className='font-medium'>Meters:</span> {metadata.batchAmount}{" "}
+          {metadata.meterType}
+        </div>
+        <div>
+          <span className='font-medium'>Total:</span> KES{" "}
+          {Number.isFinite(totalPriceNumber)
+            ? totalPriceNumber.toLocaleString()
+            : metadata.totalPrice}
+        </div>
+        <div>
+          <span className='font-medium'>Unit Price:</span> KES{" "}
+          {Number.isFinite(unitPriceNumber)
+            ? unitPriceNumber.toLocaleString()
+            : metadata.unitPrice}
+        </div>
+      </div>
+    );
+  }
+
+  if (typeof notification.metadata === "string") {
+    return notification.metadata;
+  }
+
+  return notification.type;
+};
 
 interface NotificationContextType {
-  notifications: Notification[];
   unreadCount: number;
-  markAsRead: (notificationId: string, userId: string) => Promise<void>;
-  markAllAsRead: (userId: string) => Promise<void>;
-  refreshNotifications: (userId: string) => Promise<void>;
-  loadMore: () => Promise<void>;
-  hasMore: boolean;
+  markAsRead: (notificationId: string) => Promise<void>;
+  markAllAsRead: () => Promise<void>;
 }
 
 const NotificationContext = createContext<NotificationContextType | undefined>(
@@ -54,234 +122,132 @@ export function NotificationProvider({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const [notifications, setNotifications] = useState<Notification[]>([]);
-  const [currentUser, setCurrentUser] = useState<any>(null);
-  const [hasMore, setHasMore] = useState(true);
-  const [lastFetchedId, setLastFetchedId] = useState<string | null>(null);
-  const [totalUnreadCount, setTotalUnreadCount] = useState(0);
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
 
-  const NOTIFICATIONS_PER_PAGE = 10;
-  const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
-
-  const getCachedNotifications = useCallback((): NotificationCache | null => {
-    if (typeof globalThis.localStorage === "undefined") return null;
-
-    const cached = localStorage.getItem("notificationsCache");
-    if (!cached) return null;
-
-    const parsedCache = JSON.parse(cached);
-    const now = Date.now();
-
-    // Check if cache is still valid
-    if (now - parsedCache.lastFetched > CACHE_DURATION) {
-      localStorage.removeItem("notificationsCache");
-      return null;
-    }
-
-    return parsedCache;
-  }, [CACHE_DURATION]);
-
-  const updateCache = useCallback((newData: NotificationCache) => {
-    if (typeof globalThis.localStorage === "undefined") return;
-
-    localStorage.setItem(
-      "notificationsCache",
-      JSON.stringify({
-        ...newData,
-        lastFetched: Date.now(),
-      })
-    );
-  }, []);
-
-  const refreshUnreadCount = useCallback(async (userId: string) => {
-    try {
-      const count = await getUnreadNotificationsCount(userId);
-      setTotalUnreadCount(count);
-    } catch (error) {
-      console.error("Error fetching unread count:", error);
-    }
-  }, []);
-
-  const refreshNotifications = useCallback(
-    async (userId: string) => {
-      try {
-        // First check cache
-        const cache = getCachedNotifications();
-        if (cache) {
-          setNotifications(cache.notifications);
-          setHasMore(cache.hasMore);
-          return;
-        }
-
-        const data = await getNotifications(userId, NOTIFICATIONS_PER_PAGE);
-        const processedData = data.map((notification) => ({
-          ...notification,
-          is_read: notification.read_by?.includes(userId) || false,
-        }));
-
-        setNotifications(processedData);
-        setHasMore(data.length === NOTIFICATIONS_PER_PAGE);
-        setLastFetchedId(data.at(-1)?.id ?? null);
-
-        // Update cache
-        updateCache({
-          notifications: processedData,
-          hasMore: data.length === NOTIFICATIONS_PER_PAGE,
-          lastFetched: Date.now(),
-        });
-
-        // Refresh unread count
-        await refreshUnreadCount(userId);
-      } catch (error) {
-        console.error("Error fetching notifications:", error);
-      }
+  // Query for unread count - only fetches when user is available
+  const { data: unreadCount = 0 } = useQuery({
+    queryKey: ["notifications", "unread-count", user?.id],
+    queryFn: async () => {
+      if (!user?.id) return 0;
+      return await getUnreadNotificationsCount(user.id);
     },
-    [
-      getCachedNotifications,
-      updateCache,
-      refreshUnreadCount,
-      NOTIFICATIONS_PER_PAGE,
-    ]
-  );
-
-  useEffect(() => {
-    const fetchUser = async () => {
-      try {
-        const user = await getCurrentUser();
-        setCurrentUser(user);
-        if (user) {
-          await refreshNotifications(user.id);
-        }
-      } catch (error) {
-        console.error("Error fetching user:", error);
-      }
-    };
-    fetchUser();
-  }, []);
+    enabled: !!user?.id,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    refetchInterval: false, // No polling - rely on real-time updates
+    refetchOnWindowFocus: true, // Refetch when window gains focus
+  });
 
   const markAsRead = useCallback(
-    async (notificationId: string, userId: string) => {
+    async (notificationId: string) => {
+      if (!user?.id) return;
+
       try {
-        await markNotificationAsRead(notificationId, userId);
-        await refreshNotifications(userId);
+        // Optimistically update unread count
+        queryClient.setQueryData(
+          ["notifications", "unread-count", user.id],
+          (old: number = 0) => Math.max(0, old - 1)
+        );
+
+        await markNotificationAsRead(notificationId, user.id);
+
+        // Invalidate to ensure consistency
+        queryClient.invalidateQueries({
+          queryKey: ["notifications", user.id],
+        });
+        queryClient.invalidateQueries({
+          queryKey: ["notifications", "unread-count", user.id],
+        });
       } catch (error) {
         console.error("Error marking notification as read:", error);
         toast.error("Failed to mark notification as read");
+
+        // Revert optimistic update on error
+        queryClient.invalidateQueries({
+          queryKey: ["notifications", "unread-count", user.id],
+        });
       }
     },
-    [refreshNotifications]
+    [queryClient, user?.id]
   );
 
-  const markAllAsRead = useCallback(
-    async (userId: string) => {
-      try {
-        await markAllNotificationsAsRead(userId);
-        await refreshNotifications(userId);
-        toast.success("All notifications marked as read");
-      } catch (error) {
-        console.error("Error marking all notifications as read:", error);
-        toast.error("Failed to mark all notifications as read");
-      }
-    },
-    [refreshNotifications]
-  );
+  const markAllAsRead = useCallback(async () => {
+    if (!user?.id) return;
 
+    try {
+      // Optimistically set unread count to 0
+      queryClient.setQueryData(["notifications", "unread-count", user.id], 0);
+
+      await markAllNotificationsAsRead(user.id);
+
+      // Invalidate to ensure consistency
+      queryClient.invalidateQueries({
+        queryKey: ["notifications", user.id],
+      });
+
+      toast.success("All notifications marked as read");
+    } catch (error) {
+      console.error("Error marking all notifications as read:", error);
+      toast.error("Failed to mark all notifications as read");
+
+      // Revert on error
+      queryClient.invalidateQueries({
+        queryKey: ["notifications", "unread-count", user.id],
+      });
+    }
+  }, [queryClient, user?.id]);
+
+  // Setup real-time subscription for new notifications
   useEffect(() => {
-    if (!currentUser) return;
+    if (!user?.id) return;
 
     let channel: any;
 
-    const setupSubscription = async () => {
-      channel = await subscribeToNotifications((notification) => {
-        setNotifications((prev) => {
-          const exists = prev.some((n) => n.id === notification.id);
-          if (exists) return prev;
-          return [notification, ...prev];
-        });
+    const handleNewNotification = (notification: Notification) => {
+      // Increment the unread count optimistically
+      queryClient.setQueryData(
+        ["notifications", "unread-count", user.id],
+        (old: number = 0) => old + 1
+      );
 
-        toast.info(notification.message, {
-          description: notification.type,
-          duration: 5000,
-        });
+      // Invalidate notifications list to refetch
+      queryClient.invalidateQueries({
+        queryKey: ["notifications", user.id],
+      });
+
+      // Show toast notification with optional metadata and quick action
+      toast.info(notification.message, {
+        description: buildNotificationDescription(notification),
+        duration: 8000,
+        action: {
+          label: "Mark as read",
+          onClick: () => {
+            void markAsRead(notification.id);
+          },
+        },
       });
     };
 
-    setupSubscription();
+    const setupSubscription = async () => {
+      channel = await subscribeToNotifications(handleNewNotification);
+    };
+
+    void setupSubscription();
 
     return () => {
       if (channel) {
         channel.unsubscribe();
       }
     };
-  }, [currentUser]);
-
-  const loadMore = useCallback(async () => {
-    if (!currentUser || !lastFetchedId) return;
-
-    try {
-      const data = await getNotifications(
-        currentUser.id,
-        NOTIFICATIONS_PER_PAGE,
-        lastFetchedId.toString()
-      );
-
-      const processedData = data.map((notification) => ({
-        ...notification,
-        is_read: notification.read_by?.includes(currentUser.id) || false,
-      }));
-
-      setNotifications((prev) => {
-        const combined = [...prev, ...processedData];
-        updateCache({
-          notifications: combined,
-          hasMore: data.length === NOTIFICATIONS_PER_PAGE,
-          lastFetched: Date.now(),
-        });
-        return combined;
-      });
-      setHasMore(data.length === NOTIFICATIONS_PER_PAGE);
-      if (data.length > 0) {
-        setLastFetchedId(data.at(-1)?.id ?? null);
-      }
-    } catch (error) {
-      console.error("Error loading more notifications:", error);
-    }
-  }, [currentUser, lastFetchedId, updateCache, NOTIFICATIONS_PER_PAGE]);
-
-  // Refresh unread count periodically
-  useEffect(() => {
-    if (!currentUser) return;
-
-    // Initial fetch
-    refreshUnreadCount(currentUser.id);
-
-    // Refresh every minute
-    const interval = setInterval(() => {
-      refreshUnreadCount(currentUser.id);
-    }, 60000);
-
-    return () => clearInterval(interval);
-  }, [currentUser, refreshUnreadCount]);
+  }, [user?.id, queryClient, markAsRead]);
 
   const contextValue = useMemo(
     () => ({
-      notifications,
-      unreadCount: totalUnreadCount,
+      unreadCount,
       markAsRead,
       markAllAsRead,
-      refreshNotifications,
-      loadMore,
-      hasMore,
     }),
-    [
-      notifications,
-      totalUnreadCount,
-      hasMore,
-      markAsRead,
-      markAllAsRead,
-      refreshNotifications,
-      loadMore,
-    ]
+    [unreadCount, markAsRead, markAllAsRead]
   );
 
   return (

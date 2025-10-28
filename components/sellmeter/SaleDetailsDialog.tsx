@@ -113,16 +113,16 @@ const SaleDetailsDialog = ({
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       {trigger && <DialogTrigger asChild>{trigger}</DialogTrigger>}
-      <DialogContent className='sm:max-w-[500px] h-[90vh] p-4 sm:p-6 bg-gray-50 border-gray-200 px-2'>
-        <DialogHeader>
-          <DialogTitle className='text-xl font-bold text-center pb-4 border-b'>
+      <DialogContent className='h-[90vh] bg-gray-50 border-gray-200 gap-0 p-0 flex flex-col'>
+        <DialogHeader className='px-6 pt-6 pb-4 border-b flex-none'>
+          <DialogTitle className='text-xl font-bold text-center'>
             Sale Details
           </DialogTitle>
         </DialogHeader>
         <form
           onSubmit={handleSubmit}
-          className='space-y-6 pt-4 overflow-y-auto max-h-[calc(90vh-150px)] px-1'>
-          <div className='grid gap-4 w-full'>
+          className='flex-1 overflow-y-auto m-0 px-6 py-4 space-y-6'>
+          <div className='grid w-full gap-4'>
             <div className='space-y-2 w-full'>
               <label className='text-sm font-medium'>Destination</label>
               <Input
@@ -195,7 +195,7 @@ const SaleDetailsDialog = ({
                     customerType: e.target.value as CustomerType,
                   }))
                 }
-                className='w-full rounded-md border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#000080] focus:border-transparent'>
+                className='w-full rounded-md border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent'>
                 {CUSTOMER_TYPES.map((type) => (
                   <option key={type} value={type}>
                     {type.charAt(0).toUpperCase() + type.slice(1)}
@@ -212,7 +212,7 @@ const SaleDetailsDialog = ({
                     variant='outline'
                     role='combobox'
                     aria-expanded={openCombobox}
-                    className='w-full justify-between bg-white border-2 border-gray-200 hover:border-[#000080] transition-colors font-medium'>
+                    className='w-full justify-between bg-white border-2 border-gray-200 hover:border-primary transition-colors font-medium'>
                     {formData.customerCounty || "Select county..."}
                     <ChevronsUpDown className='ml-2 h-4 w-4 shrink-0 opacity-50' />
                   </Button>
@@ -239,7 +239,7 @@ const SaleDetailsDialog = ({
                               }));
                               setOpenCombobox(false);
                             }}
-                            className='hover:bg-[#000080]/10 cursor-pointer font-medium'>
+                            className='hover:bg-primary/10 cursor-pointer font-medium'>
                             <Check
                               className={cn(
                                 "mr-2 h-4 w-4",
@@ -290,7 +290,7 @@ const SaleDetailsDialog = ({
 
           <Button
             type='submit'
-            className='w-full bg-[#E46020] hover:bg-[#e46120] text-white'>
+            className='w-full cursor-pointer bg-[#E46020] hover:bg-[#e46120] text-white'>
             Save Details
           </Button>
         </form>

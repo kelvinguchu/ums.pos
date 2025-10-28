@@ -26,7 +26,8 @@ import {
   PaginationPrevious,
 } from "@/components/ui/pagination";
 import { Input } from "@/components/ui/input";
-import { X, PackageOpen, Download, Loader2, RefreshCw } from "lucide-react";
+import { X, PackageOpen, Download, RefreshCw } from "lucide-react";
+import Loader from "@/components/ui/Loader";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -48,6 +49,7 @@ import { DatePicker } from "@/components/ui/date-picker";
 import { DateRangePicker } from "@/components/ui/date-range-picker";
 import { AddNoteDialog } from "./AddNoteDialog";
 import { CalendarDate } from "@internationalized/date";
+import { cn } from "@/lib/utils";
 
 const EmptyState = ({ message }: { message: string }) => (
   <div className='flex flex-col items-center justify-center p-8 text-gray-500'>
@@ -96,8 +98,15 @@ export default function MeterSales() {
   }, [searchUser, selectedType, selectedCustomerType, dateRange, selectedDate]);
 
   // Use the hook with server-side pagination
-  const { saleBatches, pagination, isLoading, isError, error, refetch } =
-    useMeterSalesData(currentPage, itemsPerPage, filters);
+  const {
+    saleBatches,
+    pagination,
+    isLoading,
+    isFetching,
+    isError,
+    error,
+    refetch,
+  } = useMeterSalesData(currentPage, itemsPerPage, filters);
 
   // Reset to page 1 when filters change
   React.useEffect(() => {
@@ -105,10 +114,17 @@ export default function MeterSales() {
   }, [filters]);
 
   // Add refresh handler
-  const handleRefresh = () => {
-    refetch();
-    toast.success("Sales data refreshed");
+  const handleRefresh = async () => {
+    try {
+      await refetch({ throwOnError: true });
+      toast.success("Sales data refreshed");
+    } catch (err) {
+      console.error("Failed to refresh sales data:", err);
+      toast.error("Failed to refresh sales data");
+    }
   };
+
+  const isRefreshing = isFetching && !isLoading;
 
   // Handle opening note dialog
   const handleOpenNoteDialog = (batch: SaleBatch) => {
@@ -124,8 +140,8 @@ export default function MeterSales() {
   // Add loading state
   if (isLoading) {
     return (
-      <div className='flex items-center justify-center min-h-[60vh]'>
-        <Loader2 className='h-8 w-8 animate-spin text-gray-600' />
+      <div className='relative flex items-center justify-center min-h-[60vh]'>
+        <Loader />
       </div>
     );
   }
@@ -365,8 +381,15 @@ export default function MeterSales() {
                 variant='outline'
                 size='icon'
                 onClick={handleRefresh}
-                className='hover:bg-gray-100'>
-                <RefreshCw className='h-4 w-4' />
+                className='hover:bg-gray-100'
+                disabled={isLoading || isRefreshing}
+                aria-label='Refresh sales data'>
+                <RefreshCw
+                  className={cn(
+                    "h-4 w-4 transition-transform",
+                    (isLoading || isRefreshing) && "animate-spin"
+                  )}
+                />
               </Button>
             </div>
           </div>

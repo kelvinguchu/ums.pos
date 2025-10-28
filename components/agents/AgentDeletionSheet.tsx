@@ -114,7 +114,7 @@ export default function AgentDeletionSheet({
       <div className='mb-4 sm:mb-6'>
         <Badge
           variant='outline'
-          className='w-full py-1 sm:py-2 flex justify-center text-sm sm:text-base bg-[#000080] text-white'>
+          className='w-full py-1 sm:py-2 flex justify-center text-sm sm:text-base bg-primary text-white'>
           Scanning Meters for {agent.name}
         </Badge>
         <div className='mt-2 text-center text-xs sm:text-sm text-gray-500'>

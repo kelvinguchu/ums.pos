@@ -19,6 +19,8 @@ import { X, Edit2 } from "lucide-react";
 import { pdf } from "@react-pdf/renderer";
 import MeterSalesReceipt from "../sharedcomponents/MeterSalesReceipt";
 import { Badge } from "@/components/ui/badge";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import SaleDetailsDialog from "./SaleDetailsDialog";
 import { KenyaCounty, CustomerType } from "@/lib/constants/locationData";
 import { format } from "date-fns";
@@ -420,120 +422,109 @@ export default function SellMeters({ currentUser }: { currentUser: any }) {
   };
 
   return (
-    <div className='bg-white shadow-md rounded-lg p-6 max-w-2xl mx-auto'>
-      <div className='flex flex-col min-h-[600px]'>
-        <div className='flex-1'>
-          <div className='flex justify-between items-center mb-6'>
-            <h2 className='text-2xl font-bold text-gray-800'>Sell Meters</h2>
-            <Button onClick={handleClearForm} variant='outline'>
-              Clear Form
+    <>
+      <SheetHeader>
+        <SheetTitle className='flex justify-between items-center pr-12'>
+          <span>Sell Meters</span>
+          <Button onClick={handleClearForm} variant='outline' size='sm'>
+            Clear Form
+          </Button>
+        </SheetTitle>
+      </SheetHeader>
+
+      <div className='flex-1 overflow-y-auto px-6 py-4'>
+        <div className='space-y-4'>
+          <Input
+            ref={serialInputRef}
+            type='text'
+            placeholder='Serial Number'
+            value={serialNumber.toUpperCase()}
+            onChange={handleSerialNumberChange}
+            onKeyDown={handleKeyPress}
+            required
+            maxLength={12}
+            className='w-full'
+          />
+          {errorMessage && <p className='text-red-500'>{errorMessage}</p>}
+        </div>
+
+        {/* Update the download receipt button section */}
+        {isSubmitted && meters.length === 0 && (
+          <div className='mt-4 relative'>
+            <Button
+              onClick={handleDownloadReceipt}
+              className='w-full bg-[#2ECC40] hover:bg-[#28a035] text-white'>
+              Download Sales Receipt
+            </Button>
+            <Button
+              onClick={() => setIsSubmitted(false)}
+              variant='ghost'
+              size='icon'
+              className='absolute -right-2 -top-2 h-6 w-6 rounded-full bg-gray-200 hover:bg-gray-300'
+              aria-label='Dismiss'>
+              <X className='h-4 w-4' />
             </Button>
           </div>
+        )}
 
-          <div className='space-y-4 mb-6'>
-            <Input
-              ref={serialInputRef}
-              type='text'
-              placeholder='Serial Number'
-              value={serialNumber.toUpperCase()}
-              onChange={handleSerialNumberChange}
-              onKeyDown={handleKeyPress}
-              required
-              maxLength={12}
-              className='w-full'
-            />
-            {errorMessage && <p className='text-red-500'>{errorMessage}</p>}
-          </div>
+        {meters.length > 0 && (
+          <>
+            {saleDetails ? (
+              <>
+                <div className='flex flex-wrap items-center gap-2 p-3 bg-gray-50 rounded-lg mb-4'>
+                  <Badge
+                    variant='secondary'
+                    className='bg-gradient-to-r from-green-500/50 to-blue-500/50 text-black'>
+                    Destination: {saleDetails.destination}
+                  </Badge>
+                  <Badge
+                    variant='secondary'
+                    className='bg-gradient-to-r from-orange-500/50 to-yellow-500/50 text-black'>
+                    Recipient: {saleDetails.recipient}
+                  </Badge>
+                  <Badge
+                    variant='secondary'
+                    className='bg-gradient-to-r from-purple-500/50 to-pink-500/50 text-black'>
+                    Contact: {saleDetails.customerContact}
+                  </Badge>
+                  <Badge
+                    variant='secondary'
+                    className='bg-gradient-to-r from-blue-500/50 to-indigo-500/50 text-black'>
+                    Type: {saleDetails.customerType}
+                  </Badge>
+                  <Badge
+                    variant='secondary'
+                    className='bg-gradient-to-r from-red-500/50 to-orange-500/50 text-black'>
+                    County: {saleDetails.customerCounty}
+                  </Badge>
+                  <Badge
+                    variant='secondary'
+                    className='bg-gradient-to-r from-teal-500/50 to-cyan-500/50 text-black'>
+                    Date:{" "}
+                    {saleDetails.saleDate
+                      ? formatSaleDate(saleDetails.saleDate)
+                      : "Today"}
+                  </Badge>
+                  {Object.entries(saleDetails.unitPrices).map(
+                    ([type, price]) => (
+                      <Badge
+                        key={type}
+                        variant='secondary'
+                        className='bg-gradient-to-r from-indigo-500/50 to-purple-500/50 text-black'>
+                        {type}: {price}
+                      </Badge>
+                    )
+                  )}
+                  <Button
+                    variant='ghost'
+                    size='sm'
+                    onClick={() => setIsDialogOpen(true)}
+                    className='ml-2 bg-yellow-500/50 to-blue-500/50 text-black'>
+                    <Edit2 className='h-4 w-4 mr-1' />
+                    Edit Details
+                  </Button>
+                </div>
 
-          {/* Update the download receipt button section */}
-          {isSubmitted && meters.length === 0 && (
-            <div className='mb-6 relative'>
-              <Button
-                onClick={handleDownloadReceipt}
-                className='w-full bg-[#2ECC40] hover:bg-[#28a035] text-white'>
-                Download Sales Receipt
-              </Button>
-              <Button
-                onClick={() => setIsSubmitted(false)}
-                variant='ghost'
-                size='icon'
-                className='absolute -right-2 -top-2 h-6 w-6 rounded-full bg-gray-200 hover:bg-gray-300'
-                aria-label='Dismiss'>
-                <X className='h-4 w-4' />
-              </Button>
-            </div>
-          )}
-
-          {meters.length > 0 && (
-            <>
-              {saleDetails ? (
-                <>
-                  <div className='flex flex-wrap items-center gap-2 p-3 bg-gray-50 rounded-lg mb-4'>
-                    <Badge
-                      variant='secondary'
-                      className='bg-gradient-to-r from-green-500/50 to-blue-500/50 text-black'>
-                      Destination: {saleDetails.destination}
-                    </Badge>
-                    <Badge
-                      variant='secondary'
-                      className='bg-gradient-to-r from-orange-500/50 to-yellow-500/50 text-black'>
-                      Recipient: {saleDetails.recipient}
-                    </Badge>
-                    <Badge
-                      variant='secondary'
-                      className='bg-gradient-to-r from-purple-500/50 to-pink-500/50 text-black'>
-                      Contact: {saleDetails.customerContact}
-                    </Badge>
-                    <Badge
-                      variant='secondary'
-                      className='bg-gradient-to-r from-blue-500/50 to-indigo-500/50 text-black'>
-                      Type: {saleDetails.customerType}
-                    </Badge>
-                    <Badge
-                      variant='secondary'
-                      className='bg-gradient-to-r from-red-500/50 to-orange-500/50 text-black'>
-                      County: {saleDetails.customerCounty}
-                    </Badge>
-                    <Badge
-                      variant='secondary'
-                      className='bg-gradient-to-r from-teal-500/50 to-cyan-500/50 text-black'>
-                      Date:{" "}
-                      {saleDetails.saleDate
-                        ? formatSaleDate(saleDetails.saleDate)
-                        : "Today"}
-                    </Badge>
-                    {Object.entries(saleDetails.unitPrices).map(
-                      ([type, price]) => (
-                        <Badge
-                          key={type}
-                          variant='secondary'
-                          className='bg-gradient-to-r from-indigo-500/50 to-purple-500/50 text-black'>
-                          {type}: {price}
-                        </Badge>
-                      )
-                    )}
-                    <Button
-                      variant='ghost'
-                      size='sm'
-                      onClick={() => setIsDialogOpen(true)}
-                      className='ml-2 bg-yellow-500/50 to-blue-500/50 text-black'>
-                      <Edit2 className='h-4 w-4 mr-1' />
-                      Edit Details
-                    </Button>
-                  </div>
-
-                  <SaleDetailsDialog
-                    isOpen={isDialogOpen}
-                    onOpenChange={setIsDialogOpen}
-                    onSubmit={(data) => {
-                      setSaleDetails(data);
-                      setIsDialogOpen(false);
-                    }}
-                    initialData={saleDetails}
-                    meterTypes={getUniqueTypes()}
-                  />
-                </>
-              ) : (
                 <SaleDetailsDialog
                   isOpen={isDialogOpen}
                   onOpenChange={setIsDialogOpen}
@@ -541,106 +532,115 @@ export default function SellMeters({ currentUser }: { currentUser: any }) {
                     setSaleDetails(data);
                     setIsDialogOpen(false);
                   }}
-                  initialData={null}
+                  initialData={saleDetails}
                   meterTypes={getUniqueTypes()}
-                  trigger={
-                    <Button className='w-full bg-[#000080] hover:bg-[#000066] mb-4'>
-                      Add Sale Details
-                    </Button>
-                  }
                 />
-              )}
+              </>
+            ) : (
+              <SaleDetailsDialog
+                isOpen={isDialogOpen}
+                onOpenChange={setIsDialogOpen}
+                onSubmit={(data) => {
+                  setSaleDetails(data);
+                  setIsDialogOpen(false);
+                }}
+                initialData={null}
+                meterTypes={getUniqueTypes()}
+                trigger={
+                  <Button className='w-full bg-primary hover:bg-[#000066] mb-4'>
+                    Add Sale Details
+                  </Button>
+                }
+              />
+            )}
 
-              {/* Group the action buttons together */}
-              {meters.length > 0 ? (
-                <div className='space-y-4 mb-6'>
-                  {saleDetails && (
-                    <Button
-                      onClick={handleSellMeters}
-                      disabled={isSellingMeters}
-                      className='w-full bg-[#E46020] hover:bg-[#e46120] text-white'>
-                      {isSellingMeters ? (
-                        <>
-                          <span className='mr-2'>Selling Meters...</span>
-                          <div className='h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent' />
-                        </>
-                      ) : (
-                        `Confirm Sale of ${meters.length} Meter${
-                          meters.length !== 1 ? "s" : ""
-                        }`
-                      )}
-                    </Button>
-                  )}
-                </div>
-              ) : (
-                // Show download button when meters are empty (after submission)
-                isSubmitted && (
-                  <div className='space-y-4 mb-6 relative'>
-                    <Button
-                      onClick={handleDownloadReceipt}
-                      className='w-full bg-[#2ECC40] hover:bg-[#28a035] text-white'>
-                      Download Receipt
-                    </Button>
-                    <Button
-                      onClick={() => setIsSubmitted(false)}
-                      variant='ghost'
-                      size='icon'
-                      className='absolute -right-2 -top-2 h-6 w-6 rounded-full bg-gray-200 hover:bg-gray-300'
-                      aria-label='Dismiss'>
-                      <X className='h-4 w-4' />
-                    </Button>
-                  </div>
-                )
-              )}
-
-              <div className='mt-6'>
-                <div className='flex justify-between items-center mb-2'>
-                  <h3 className='text-lg font-semibold text-gray-700'>
-                    Meters to Sell
-                  </h3>
-                  <span className='text-sm text-gray-500'>
-                    Total: {meters.length} meter{meters.length !== 1 ? "s" : ""}
-                  </span>
-                </div>
-                <div className='max-h-[400px] overflow-y-auto border border-gray-200 rounded-md'>
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead className='bg-gray-50'>
-                          Serial Number
-                        </TableHead>
-                        <TableHead className='bg-gray-50'>Type</TableHead>
-                        <TableHead className='bg-gray-50'>Action</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {meters.map((meter, index) => (
-                        <TableRow
-                          key={index}
-                          data-row-index={index}
-                          className={
-                            index % 2 === 0 ? "bg-white" : "bg-gray-50"
-                          }>
-                          <TableCell>{meter.serialNumber}</TableCell>
-                          <TableCell>{meter.type}</TableCell>
-                          <TableCell>
-                            <Button
-                              onClick={() => handleRemoveMeter(index)}
-                              variant='ghost'
-                              size='sm'>
-                              <X className='h-4 w-4' />
-                            </Button>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </div>
+            {/* Group the action buttons together */}
+            {meters.length > 0 ? (
+              <div className='space-y-4 mb-6'>
+                {saleDetails && (
+                  <Button
+                    onClick={handleSellMeters}
+                    disabled={isSellingMeters}
+                    className='w-full bg-[#E46020] hover:bg-[#e46120] text-white'>
+                    {isSellingMeters ? (
+                      <>
+                        <span className='mr-2'>Selling Meters...</span>
+                        <div className='h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent' />
+                      </>
+                    ) : (
+                      `Confirm Sale of ${meters.length} Meter${
+                        meters.length !== 1 ? "s" : ""
+                      }`
+                    )}
+                  </Button>
+                )}
               </div>
-            </>
-          )}
-        </div>
+            ) : (
+              // Show download button when meters are empty (after submission)
+              isSubmitted && (
+                <div className='space-y-4 mb-6 relative'>
+                  <Button
+                    onClick={handleDownloadReceipt}
+                    className='w-full bg-[#2ECC40] hover:bg-[#28a035] text-white'>
+                    Download Receipt
+                  </Button>
+                  <Button
+                    onClick={() => setIsSubmitted(false)}
+                    variant='ghost'
+                    size='icon'
+                    className='absolute -right-2 -top-2 h-6 w-6 rounded-full bg-gray-200 hover:bg-gray-300'
+                    aria-label='Dismiss'>
+                    <X className='h-4 w-4' />
+                  </Button>
+                </div>
+              )
+            )}
+
+            <div className='mt-6'>
+              <div className='flex justify-between items-center mb-2'>
+                <h3 className='text-lg font-semibold text-gray-700'>
+                  Meters to Sell
+                </h3>
+                <span className='text-sm text-gray-500'>
+                  Total: {meters.length} meter{meters.length !== 1 ? "s" : ""}
+                </span>
+              </div>
+              <ScrollArea className='max-h-[400px] border border-gray-200 rounded-md'>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className='bg-gray-50'>
+                        Serial Number
+                      </TableHead>
+                      <TableHead className='bg-gray-50'>Type</TableHead>
+                      <TableHead className='bg-gray-50'>Action</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {meters.map((meter, index) => (
+                      <TableRow
+                        key={index}
+                        data-row-index={index}
+                        className={index % 2 === 0 ? "bg-white" : "bg-gray-50"}>
+                        <TableCell>{meter.serialNumber}</TableCell>
+                        <TableCell>{meter.type}</TableCell>
+                        <TableCell>
+                          <Button
+                            onClick={() => handleRemoveMeter(index)}
+                            variant='ghost'
+                            size='sm'>
+                            <X className='h-4 w-4' />
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </ScrollArea>
+            </div>
+          </>
+        )}
       </div>
-    </div>
+    </>
   );
 }

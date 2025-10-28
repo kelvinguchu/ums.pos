@@ -8,6 +8,11 @@ import {
   Font,
 } from "@react-pdf/renderer";
 import { format } from "date-fns";
+import type {
+  AgentInventory,
+  RemainingMetersByType,
+  SaleWithMeters,
+} from "./types";
 
 Font.register({
   family: "GeistMono",
@@ -117,33 +122,75 @@ const styles = StyleSheet.create({
     fontSize: 10,
     color: "#000080",
   },
+  saleCard: {
+    borderWidth: 1,
+    borderColor: "#dbeafe",
+    borderRadius: 6,
+    padding: 12,
+    marginBottom: 12,
+    backgroundColor: "#ffffff",
+  },
+  saleHeaderRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+    marginBottom: 8,
+  },
+  saleTitle: {
+    fontSize: 12,
+    fontWeight: "bold",
+    color: "#000080",
+  },
+  saleMeta: {
+    fontSize: 10,
+    color: "#555",
+  },
+  saleTotal: {
+    fontSize: 12,
+    fontWeight: "bold",
+    color: "#000080",
+  },
+  saleMetaGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    marginBottom: 8,
+  },
+  metaItem: {
+    width: "50%",
+    marginBottom: 4,
+  },
+  metaLabel: {
+    fontSize: 9,
+    color: "#6b7280",
+  },
+  metaValue: {
+    fontSize: 10,
+    color: "#111827",
+  },
+  serialsSection: {
+    marginTop: 4,
+  },
+  serialsTitle: {
+    fontSize: 10,
+    fontWeight: "bold",
+    marginBottom: 4,
+    color: "#000080",
+  },
+  serialRow: {
+    flexDirection: "row",
+    justifyContent: "flex-start",
+  },
+  serialCell: {
+    width: "25%",
+    fontSize: 9,
+    color: "#1f2937",
+    paddingVertical: 2,
+  },
+  noSerialsText: {
+    fontSize: 9,
+    color: "#6b7280",
+  },
 });
-
-interface MeterDetail {
-  batch_id: string;
-  serial_number: string;
-  recipient: string;
-  destination: string;
-  customer_type: string | null;
-  customer_county: string | null;
-  customer_contact: string | null;
-}
-
-interface SaleWithMeters {
-  id: string;
-  user_name: string;
-  meter_type: string;
-  batch_amount: number;
-  unit_price: number;
-  total_price: number;
-  destination: string;
-  recipient: string;
-  customer_type: string | null;
-  customer_county: string | null;
-  customer_contact: string | null;
-  sale_date: Date | null;
-  meters: MeterDetail[];
-}
 
 interface TimeRangeReportPDFProps {
   sales: SaleWithMeters[];
@@ -158,8 +205,8 @@ interface TimeRangeReportPDFProps {
     totalMeters: number;
     metersByType: { [key: string]: number };
   };
-  remainingMetersByType: any[];
-  agentInventory: any[];
+  remainingMetersByType: RemainingMetersByType[];
+  agentInventory: AgentInventory[];
 }
 
 const METER_TYPES = [
@@ -170,6 +217,16 @@ const METER_TYPES = [
   "smart",
   "3 phase",
 ] as const;
+
+const SERIAL_COLUMNS = 4;
+
+const chunkArray = <T,>(items: T[], chunkSize: number): T[][] => {
+  const chunks: T[][] = [];
+  for (let i = 0; i < items.length; i += chunkSize) {
+    chunks.push(items.slice(i, i + chunkSize));
+  }
+  return chunks;
+};
 
 const TimeRangeReportPDF = ({
   sales,
@@ -305,45 +362,102 @@ const TimeRangeReportPDF = ({
             ))}
           </View>
         </View>
-
         {/* Detailed Sales with Serial Numbers */}
+        <View break />
+
         <View style={styles.summarySection}>
           <Text style={styles.subtitle}>Details</Text>
-          {sales.slice(0, 10).map((sale) => (
-            <View key={sale.id} style={{ marginBottom: 15 }}>
-              <Text style={styles.comparisonText}>
-                {sale.sale_date
-                  ? format(new Date(sale.sale_date), "dd/MM/yyyy HH:mm")
-                  : "N/A"}{" "}
-                - {sale.recipient} ({sale.meter_type} x {sale.batch_amount}) -
-                KES {sale.total_price.toLocaleString()}
-              </Text>
-              <View style={styles.table}>
-                <View style={[styles.tableRow, styles.tableHeader]}>
-                  <Text style={styles.tableHeaderCell}>Serial Number</Text>
-                  <Text style={styles.tableHeaderCell}>Contact</Text>
-                  <Text style={styles.tableHeaderCell}>County</Text>
-                </View>
-                {sale.meters.map((meter) => (
-                  <View key={meter.serial_number} style={styles.tableRow}>
-                    <Text style={styles.tableCell}>{meter.serial_number}</Text>
-                    <Text style={styles.tableCell}>
-                      {meter.customer_contact || "N/A"}
+          {sales.map((sale) => {
+            const totalMetersCount = sale.meters?.length ?? 0;
+            const chunkedSerials = chunkArray(
+              sale.meters ?? [],
+              SERIAL_COLUMNS
+            );
+
+            return (
+              <View key={sale.id} style={styles.saleCard}>
+                <View style={styles.saleHeaderRow}>
+                  <View>
+                    <Text style={styles.saleTitle}>{sale.recipient}</Text>
+                    <Text style={styles.saleMeta}>
+                      {sale.meter_type} • {sale.batch_amount} meters
                     </Text>
-                    <Text style={styles.tableCell}>
-                      {meter.customer_county || "N/A"}
+                    <Text style={styles.saleMeta}>
+                      {sale.sale_date
+                        ? format(new Date(sale.sale_date), "dd/MM/yyyy HH:mm")
+                        : "N/A"}
                     </Text>
                   </View>
-                ))}
+                  <Text style={styles.saleTotal}>
+                    KES {sale.total_price.toLocaleString()}
+                  </Text>
+                </View>
+
+                <View style={styles.saleMetaGrid}>
+                  <View style={styles.metaItem}>
+                    <Text style={styles.metaLabel}>Sales Rep</Text>
+                    <Text style={styles.metaValue}>{sale.user_name}</Text>
+                  </View>
+                  <View style={styles.metaItem}>
+                    <Text style={styles.metaLabel}>Destination</Text>
+                    <Text style={styles.metaValue}>{sale.destination}</Text>
+                  </View>
+                  <View style={styles.metaItem}>
+                    <Text style={styles.metaLabel}>Contact</Text>
+                    <Text style={styles.metaValue}>
+                      {sale.customer_contact || "N/A"}
+                    </Text>
+                  </View>
+                  <View style={styles.metaItem}>
+                    <Text style={styles.metaLabel}>County</Text>
+                    <Text style={styles.metaValue}>
+                      {sale.customer_county || "N/A"}
+                    </Text>
+                  </View>
+                  <View style={styles.metaItem}>
+                    <Text style={styles.metaLabel}>Customer Type</Text>
+                    <Text style={styles.metaValue}>
+                      {sale.customer_type || "N/A"}
+                    </Text>
+                  </View>
+                </View>
+
+                <View style={styles.serialsSection}>
+                  <Text style={styles.serialsTitle}>
+                    Serial Numbers ({totalMetersCount})
+                  </Text>
+                  {chunkedSerials.length > 0 ? (
+                    chunkedSerials.map((row, rowIndex) => (
+                      <View
+                        key={`${sale.id}-row-${rowIndex}`}
+                        style={styles.serialRow}>
+                        {row.map((meter) => (
+                          <Text
+                            key={`${sale.id}-${meter.serial_number}`}
+                            style={styles.serialCell}>
+                            {meter.serial_number}
+                          </Text>
+                        ))}
+                        {Array.from({
+                          length: SERIAL_COLUMNS - row.length,
+                        }).map((_, fillerIndex) => (
+                          <Text
+                            key={`${sale.id}-filler-${rowIndex}-${fillerIndex}`}
+                            style={styles.serialCell}>
+                            {" "}
+                          </Text>
+                        ))}
+                      </View>
+                    ))
+                  ) : (
+                    <Text style={styles.noSerialsText}>
+                      No meter serials recorded for this transaction.
+                    </Text>
+                  )}
+                </View>
               </View>
-            </View>
-          ))}
-          {sales.length > 10 && (
-            <Text style={styles.comparisonText}>
-              ... and {sales.length - 10} more transactions (showing first 10
-              for brevity)
-            </Text>
-          )}
+            );
+          })}
         </View>
 
         <Text style={styles.footer}>

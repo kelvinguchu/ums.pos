@@ -86,7 +86,7 @@ export default function AgentActionsMenu({
         <Sheet>
           <SheetTrigger asChild>
             <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-              <ClipboardList className='mr-2 h-4 w-4 text-[#000080]' />
+              <ClipboardList className='mr-2 h-4 w-4 text-primary' />
               View Inventory
             </DropdownMenuItem>
           </SheetTrigger>
@@ -113,7 +113,7 @@ export default function AgentActionsMenu({
                 e.preventDefault();
                 onEdit(agent);
               }}>
-              <Edit2 className='mr-2 h-4 w-4 text-[#000080]' />
+              <Edit2 className='mr-2 h-4 w-4 text-primary' />
               Edit Agent
             </DropdownMenuItem>
 
@@ -125,7 +125,7 @@ export default function AgentActionsMenu({
                   Record Sale
                 </DropdownMenuItem>
               </DrawerTrigger>
-              <DrawerContent className='bg-gray-50 border-gray-200 px-2'>
+              <DrawerContent className='bg-gray-50 border-gray-200 min-h-[90vh] px-2'>
                 <DrawerHeader>
                   <DrawerTitle>Record Sale - {agent.name}</DrawerTitle>
                 </DrawerHeader>
@@ -148,7 +148,7 @@ export default function AgentActionsMenu({
             <Sheet>
               <SheetTrigger asChild>
                 <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-                  <PlusCircle className='mr-2 h-4 w-4 text-[#000080]' />
+                  <PlusCircle className='mr-2 h-4 w-4 text-primary' />
                   Assign Meters
                 </DropdownMenuItem>
               </SheetTrigger>
@@ -157,7 +157,7 @@ export default function AgentActionsMenu({
                   <SheetTitle className='flex items-center justify-center gap-2'>
                     <Badge
                       variant='outline'
-                      className='bg-[#000080] text-white px-4 py-2 text-sm'>
+                      className='bg-primary text-white px-4 py-2 text-sm'>
                       Assigning Meters to {agent.name}
                     </Badge>
                   </SheetTitle>
@@ -182,7 +182,7 @@ export default function AgentActionsMenu({
                   <SheetTitle className='flex items-center justify-center gap-2'>
                     <Badge
                       variant='outline'
-                      className='bg-[#000080] text-white px-4 py-2 text-sm'>
+                      className='bg-primary text-white px-4 py-2 text-sm'>
                       Return Meters from {agent.name}
                     </Badge>
                   </SheetTitle>

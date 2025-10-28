@@ -1,37 +1,21 @@
 /**
- * Page Prefetching Hook
+ * Page Prefetching Hook - Enhanced Version
  *
- * This hook implements an intelligent data prefetching system for navigation pages.
- * It leverages TanStack Query's prefetchQuery to preload data when users hover over
- * navigation items, significantly improving perceived performance.
+ * This hook implements an aggressive data prefetching system for navigation pages.
+ * It prefetches data BEFORE users navigate, ensuring instant page loads.
  *
- * How it works:
- * 1. When a user hovers over a navigation item (onMouseEnter), the corresponding
- *    page's data is prefetched in the background
- * 2. The prefetched data is stored in TanStack Query's cache
- * 3. When the user clicks to navigate, the data is already available, providing
- *    instant page loads
- * 4. Cache invalidation is handled automatically via staleTime settings
+ * Strategy:
+ * 1. Prefetch all critical pages on app mount (dashboard, sales, agents)
+ * 2. Use exact query keys that match component implementations
+ * 3. Set appropriate stale times to prevent unnecessary refetches
+ * 4. Prefetch in background without blocking UI
  *
- * Server Actions Called:
- * - Dashboard: getSalesChartData (30 day default)
- * - Sales: getSaleBatches (all sale batches with full details)
- * - Reports: getRemainingMetersByType, getTopSellingUsers, getMostSellingProduct,
- *           getEarningsByMeterType, getAgentInventoryCount, getCustomerTypeCounts
- * - Daily Reports: getSaleBatches, getRemainingMetersByType
- * - Users: getUsersList
- * - Agents: getAgentsList
- *
- * Cache Strategy:
- * - Most queries: 30 seconds stale time (STALE_TIME)
- * - Users: 30 minutes (less frequently changing)
- * - Agents: 1 hour (rarely changes)
- * - Reports metrics: 1 minute (balance between freshness and performance)
- *
- * All prefetch operations are non-blocking and fail gracefully with console warnings
- * if they encounter errors.
- *
- * @see NavigationMenu component for usage
+ * CRITICAL: Query keys MUST match exactly with component usage
+ * - Dashboard: ["salesChartData", 30]
+ * - Sales: ["saleBatches", 1, 10, undefined] (page, limit, filters)
+ * - Reports: Multiple queries with specific keys
+ * - Users: ["users", false]
+ * - Agents: ["agents", "list"]
  */
 
 import { useQueryClient } from "@tanstack/react-query";
@@ -50,8 +34,8 @@ import {
   getCustomerTypeCounts,
 } from "@/lib/actions/reports";
 
-const CACHE_TIME = 1000 * 60 * 5; // 5 minutes
-const STALE_TIME = 1000 * 30; // 30 seconds
+const CACHE_TIME = 1000 * 60 * 5; // 5 minutes - keep in memory
+const STALE_TIME = 1000 * 30; // 30 seconds - refetch if older
 
 /**
  * Helper function to aggregate top sellers data
@@ -74,18 +58,18 @@ function aggregateTopSellers(topUsers: any[]) {
 }
 /**
  * Hook that provides prefetch functions for all navigation pages
- * Prefetching data on hover improves perceived performance
+ * Prefetching data aggressively improves perceived performance
  */
 export function usePagePrefetch() {
   const queryClient = useQueryClient();
 
   /**
    * Prefetch dashboard page data
-   * - Sales chart data for default 30 days period
+   * MUST match SalesBarchart component query key exactly
    */
   const prefetchDashboard = useCallback(async () => {
     await queryClient.prefetchQuery({
-      queryKey: ["salesChartData", 30],
+      queryKey: ["salesChartData", 30], // Matches SalesBarchart default
       queryFn: () => getSalesChartData(30),
       staleTime: STALE_TIME,
     });
@@ -93,11 +77,11 @@ export function usePagePrefetch() {
 
   /**
    * Prefetch sales page data
-   * - All sale batches with transaction details
+   * MUST match useMeterSalesData hook query key exactly
    */
   const prefetchSales = useCallback(async () => {
     await queryClient.prefetchQuery({
-      queryKey: ["saleBatches", 1, 10],
+      queryKey: ["saleBatches", 1, 10, undefined], // Matches useMeterSalesData default (page 1, limit 10, no filters)
       queryFn: async () => {
         const data = await getSaleBatches(1, 10);
         return data;
@@ -164,7 +148,7 @@ export function usePagePrefetch() {
   const prefetchDailyReports = useCallback(async () => {
     await Promise.all([
       queryClient.prefetchQuery({
-        queryKey: ["sales"],
+        queryKey: ["saleBatches", 1, 1000, undefined], // Match component's initial fetch
         queryFn: () => getSaleBatches(1, 1000),
         staleTime: STALE_TIME,
       }),
@@ -184,7 +168,7 @@ export function usePagePrefetch() {
     await queryClient.prefetchQuery({
       queryKey: ["users", false], // false = don't show deactivated users by default
       queryFn: getUsersList,
-      staleTime: 30 * 60 * 1000, // 30 minutes
+      staleTime: 30 * 60 * 1000, // 30 minutes - users data changes infrequently
     });
   }, [queryClient]);
 
@@ -196,12 +180,48 @@ export function usePagePrefetch() {
     await queryClient.prefetchQuery({
       queryKey: ["agents", "list"],
       queryFn: getAgentsList,
-      staleTime: 60 * 60 * 1000, // 1 hour
+      staleTime: 60 * 60 * 1000, // 1 hour - agents data rarely changes
     });
   }, [queryClient]);
 
   /**
+   * Prefetch all critical pages at once
+   * Call this on app mount for aggressive prefetching
+   */
+  const prefetchAllPages = useCallback(async () => {
+    // Prefetch in priority order - most visited pages first
+    const criticalPrefetches = [
+      prefetchDashboard(),
+      prefetchSales(),
+      prefetchAgents(),
+    ];
+
+    // Secondary prefetches
+    const secondaryPrefetches = [
+      prefetchUsers(),
+      prefetchReports(),
+      prefetchDailyReports(),
+    ];
+
+    // Run critical prefetches first
+    await Promise.allSettled(criticalPrefetches);
+
+    // Run secondary prefetches in background
+    Promise.allSettled(secondaryPrefetches).catch((error) => {
+      console.warn("Secondary prefetch failed:", error);
+    });
+  }, [
+    prefetchDashboard,
+    prefetchSales,
+    prefetchAgents,
+    prefetchUsers,
+    prefetchReports,
+    prefetchDailyReports,
+  ]);
+
+  /**
    * Map of page URLs to their prefetch functions
+   * Used for on-demand prefetching (e.g., on hover)
    */
   const prefetchMap = {
     "/dashboard": prefetchDashboard,
@@ -238,6 +258,7 @@ export function usePagePrefetch() {
 
   return {
     prefetchPage,
+    prefetchAllPages,
     prefetchDashboard,
     prefetchSales,
     prefetchReports,

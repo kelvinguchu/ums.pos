@@ -1,10 +1,24 @@
 import type { SaleBatch as DBSaleBatch } from "@/lib/db/schema";
 
+export interface MeterDetail {
+  batch_id: string;
+  serial_number: string;
+  recipient: string;
+  destination: string;
+  customer_type: string | null;
+  customer_county: string | null;
+  customer_contact: string | null;
+}
+
 // Extend the database type to convert numeric fields to numbers
-export interface SaleBatch extends Omit<DBSaleBatch, 'unit_price' | 'total_price'> {
+export interface SaleBatch
+  extends Omit<DBSaleBatch, "unit_price" | "total_price"> {
   unit_price: number;
   total_price: number;
+  meters?: MeterDetail[];
 }
+
+export type SaleWithMeters = SaleBatch & { meters: MeterDetail[] };
 
 export interface FiltersProps {
   searchUser: string;
@@ -65,4 +79,4 @@ export interface ReportMetrics {
 export interface AgentInventory {
   type: string;
   with_agents: number;
-} 
+}

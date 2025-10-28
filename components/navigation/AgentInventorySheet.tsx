@@ -25,7 +25,7 @@ export function AgentInventorySheet({
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent className='min-w-[40vw] bg-gray-50 border-l border-gray-200 px-2'>
         <SheetHeader>
-          <SheetTitle className='text-[#000080] text-center'>
+          <SheetTitle className='text-primary text-center'>
             Agent Inventory - {agentName}
           </SheetTitle>
         </SheetHeader>

@@ -131,7 +131,7 @@ export default function CreateAgentDialog({
                   variant='outline'
                   role='combobox'
                   aria-expanded={openCombobox}
-                  className='w-full justify-between bg-white border-2 border-gray-200 hover:border-[#000080] transition-colors font-medium'>
+                  className='w-full justify-between bg-white border-2 border-gray-200 hover:border-primary transition-colors font-medium'>
                   {formData.county || "Select county..."}
                   <ChevronsUpDown className='ml-2 h-4 w-4 shrink-0 opacity-50' />
                 </Button>
@@ -156,7 +156,7 @@ export default function CreateAgentDialog({
                             }));
                             setOpenCombobox(false);
                           }}
-                          className='hover:bg-[#000080]/10 cursor-pointer font-medium'>
+                          className='hover:bg-primary/10 cursor-pointer font-medium'>
                           <Check
                             className={cn(
                               "mr-2 h-4 w-4",
@@ -185,7 +185,7 @@ export default function CreateAgentDialog({
             <Button
               type='submit'
               disabled={isLoading}
-              className='bg-[#000080] hover:bg-[#000066]'>
+              className='bg-primary hover:bg-[#000066]'>
               {isLoading ? "Creating..." : "Create Agent"}
             </Button>
           </DialogFooter>

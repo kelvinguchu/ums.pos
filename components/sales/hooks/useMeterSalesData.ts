@@ -53,10 +53,14 @@ export function useMeterSalesData(
       totalPages: 0,
     },
     isLoading: salesQuery.isLoading,
+    isFetching: salesQuery.isFetching,
     isError: salesQuery.isError,
     error: salesQuery.error,
-    refetch: () => {
-      salesQuery.refetch();
+    refetch: async (options?: { throwOnError?: boolean }) => {
+      return salesQuery.refetch({
+        cancelRefetch: false,
+        throwOnError: options?.throwOnError ?? false,
+      });
     },
   };
 }

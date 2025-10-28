@@ -121,7 +121,7 @@ export const SubmissionHandler = memo(function SubmissionHandler({
       <div className='mt-6 relative'>
         <Button
           onClick={handleDownloadReceipt}
-          className='w-full bg-[#2ECC40] hover:bg-[#28a035] text-white'>
+          className='w-full bg-[#2ECC40] cursor-pointer hover:bg-[#28a035] text-white'>
           Download Receipt
         </Button>
         <Button
@@ -146,7 +146,7 @@ export const SubmissionHandler = memo(function SubmissionHandler({
     <div className='space-y-4 mb-6'>
       <Button
         onClick={onSubmit}
-        className='w-full bg-[#E46020] hover:bg-[#e46120] text-white'
+        className='w-full bg-[#E46020] cursor-pointer hover:bg-[#e46120] text-white'
         disabled={isSubmitting}>
         {isSubmitting ? (
           <>

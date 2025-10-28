@@ -15,7 +15,6 @@ import { getMeterTypeBadgeClass } from "../utils/meterTypeConfig";
 import type { RemainingMetersByType, AgentInventory } from "../types";
 import {
   SheetTitle,
-  SheetDescription,
   Sheet,
   SheetContent,
   SheetTrigger,
@@ -45,7 +44,7 @@ export function MeterInventoryCard({
   remainingMetersByType,
   agentInventory,
   sidebarState,
-}: MeterInventoryCardProps) {
+}: Readonly<MeterInventoryCardProps>) {
   // Helper functions
   const getAgentCount = (meterType: string) => {
     const inventory = agentInventory.find(
@@ -88,9 +87,7 @@ export function MeterInventoryCard({
     <Card
       className={cn(
         "shadow-md hover:shadow-xl",
-        sidebarState === "expanded"
-          ? "col-span-full lg:col-span-2"
-          : "col-span-full lg:col-span-2"
+        "col-span-full lg:col-span-2"
       )}>
       <CardHeader className='flex flex-row items-center justify-between p-4 md:p-6'>
         <CardTitle className='text-lg md:text-xl'>Meters Remaining</CardTitle>
@@ -99,13 +96,16 @@ export function MeterInventoryCard({
             <SheetTrigger asChild>
               <Badge
                 variant='outline'
-                className='hover:bg-gray-100 cursor-pointer flex items-center gap-1'>
+                role='button'
+                tabIndex={0}
+                aria-label='Open all meters overview'
+                className='hover:bg-gray-100 cursor-pointer flex items-center gap-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-primary'>
                 <List className='h-3 w-3' />
                 All Meters
               </Badge>
             </SheetTrigger>
             <SheetContent
-              className='min-w-[90vw] md:min-w-[70vw] bg-gray-50 border-l border-gray-200 px-2'
+              className='min-w-[90vw] md:min-w-[70vw] bg-gray-50 border-l border-gray-200'
               side='right'>
               <VisuallyHidden.Root>
                 <SheetTitle>All Meters</SheetTitle>
@@ -118,12 +118,17 @@ export function MeterInventoryCard({
             <SheetTrigger asChild>
               <Badge
                 variant='outline'
-                className='hover:bg-gray-100 cursor-pointer flex items-center gap-1'>
+                role='button'
+                tabIndex={0}
+                aria-label='Open faulty meters view'
+                className='hover:bg-gray-100 cursor-pointer flex items-center gap-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-primary'>
                 <AlertTriangle className='h-3 w-3' />
                 Faulty Meters
               </Badge>
             </SheetTrigger>
-            <SheetContent className='min-w-[90vw] md:min-w-[70vw] bg-gray-50 border-l border-gray-200 px-2'>
+            <SheetContent
+              side='right'
+              className='min-w-[90vw] md:min-w-[70vw] bg-gray-50 border-l border-gray-200'>
               <VisuallyHidden.Root>
                 <SheetTitle>Faulty Meters</SheetTitle>
               </VisuallyHidden.Root>
@@ -135,12 +140,17 @@ export function MeterInventoryCard({
             <SheetTrigger asChild>
               <Badge
                 variant='outline'
-                className='hover:bg-gray-100 cursor-pointer flex items-center gap-1'>
+                role='button'
+                tabIndex={0}
+                aria-label='Open meter replacements view'
+                className='hover:bg-gray-100 cursor-pointer flex items-center gap-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-primary'>
                 <RefreshCw className='h-3 w-3' />
                 Replacements
               </Badge>
             </SheetTrigger>
-            <SheetContent className='min-w-[90vw] md:min-w-[70vw] bg-gray-50 border-l border-gray-200 px-2'>
+            <SheetContent
+              side='right'
+              className='min-w-[90vw] md:min-w-[70vw] bg-gray-50 border-l border-gray-200'>
               <VisuallyHidden.Root>
                 <SheetTitle>Replacements</SheetTitle>
               </VisuallyHidden.Root>
@@ -152,12 +162,17 @@ export function MeterInventoryCard({
             <SheetTrigger asChild>
               <Badge
                 variant='outline'
-                className='hover:bg-gray-100 cursor-pointer flex items-center gap-1'>
+                role='button'
+                tabIndex={0}
+                aria-label='Open purchase batches history'
+                className='hover:bg-gray-100 cursor-pointer flex items-center gap-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-primary'>
                 <History className='h-3 w-3' />
                 Purchase History
               </Badge>
             </SheetTrigger>
-            <SheetContent className='min-w-[90vw] md:min-w-[70vw] bg-gray-50 border-l border-gray-200 px-2'>
+            <SheetContent
+              side='right'
+              className='min-w-[90vw] md:min-w-[70vw] bg-gray-50 border-l border-gray-200'>
               <VisuallyHidden.Root>
                 <SheetTitle>Purchase History</SheetTitle>
               </VisuallyHidden.Root>
@@ -175,7 +190,7 @@ export function MeterInventoryCard({
               {METER_TYPES.map((type, index) => {
                 const item = allMeterTypes.find((m) => m.type === type)!;
                 return (
-                  <div key={index} className='space-y-2'>
+                  <div key={type} className='space-y-2'>
                     <div className='flex justify-between items-center font-medium'>
                       <Badge
                         variant='outline'
@@ -235,8 +250,8 @@ export function MeterInventoryCard({
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {allMeterTypes.map((item, index) => (
-                    <TableRow key={index} className='hover:bg-gray-50'>
+                  {allMeterTypes.map((item) => (
+                    <TableRow key={item.type} className='hover:bg-gray-50'>
                       <TableCell>
                         <Badge
                           variant='outline'

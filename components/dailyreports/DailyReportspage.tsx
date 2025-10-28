@@ -3,15 +3,10 @@ import DailyReports from "./DailyReports";
 import { Button } from "@/components/ui/button";
 import { pdf } from "@react-pdf/renderer";
 import DailyReportPDF from "./DailyReportPDF";
-import { useState, useEffect } from "react";
-import {
-  getRemainingMetersByType,
-  getAgentInventoryCount,
-  getDetailedSalesToday,
-  getDetailedSalesYesterday,
-  getDetailedSalesByDateRange,
-} from "@/lib/actions/reports";
+import { useEffect, useState } from "react";
+import { getDetailedSalesByDateRange } from "@/lib/actions/reports";
 import { toast } from "sonner";
+import { useAllReportsData } from "./hooks/useReportsData";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -29,60 +24,19 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-
-interface MeterDetail {
-  batch_id: string;
-  serial_number: string;
-  recipient: string;
-  destination: string;
-  customer_type: string | null;
-  customer_county: string | null;
-  customer_contact: string | null;
-}
-
-interface SaleWithMeters {
-  id: string;
-  user_id: string;
-  user_name: string;
-  meter_type: string;
-  batch_amount: number;
-  unit_price: number;
-  total_price: number;
-  destination: string;
-  recipient: string;
-  customer_type: string | null;
-  customer_county: string | null;
-  customer_contact: string | null;
-  sale_date: Date | null;
-  transaction_id: string | null;
-  meters: MeterDetail[];
-}
-
-interface RemainingMetersByType {
-  type: string;
-  remaining_meters: number;
-}
-
-interface DateRange {
-  startDate: Date;
-  endDate: Date;
-  label: string;
-}
-
-interface AgentInventory {
-  type: string;
-  with_agents: number;
-}
+import type {
+  AgentInventory,
+  DateRange,
+  RemainingMetersByType,
+  SaleWithMeters,
+} from "./types";
 
 const DailyReportsPage = () => {
-  const [todaySales, setTodaySales] = useState<SaleWithMeters[]>([]);
-  const [yesterdaySales, setYesterdaySales] = useState<SaleWithMeters[]>([]);
-  const [remainingMetersByType, setRemainingMetersByType] = useState<
-    RemainingMetersByType[]
-  >([]);
-  const [todayTotalEarnings, setTodayTotalEarnings] = useState<number>(0);
-  const [yesterdayTotalEarnings, setYesterdayTotalEarnings] =
-    useState<number>(0);
+  // Use React Query for all data fetching - cache shared across components
+  const { todaySales, yesterdaySales, remainingMeters, agentInventory } =
+    useAllReportsData();
+
+  const [isClient, setIsClient] = useState(false);
   const [isGeneratingDaily, setIsGeneratingDaily] = useState(false);
   const [isGeneratingOther, setIsGeneratingOther] = useState(false);
   const [selectedDateRange, setSelectedDateRange] = useState<DateRange | null>(
@@ -90,39 +44,16 @@ const DailyReportsPage = () => {
   );
   const [customDateRange, setCustomDateRange] = useState<any>(null);
   const [specificDate, setSpecificDate] = useState<CalendarDate | null>(null);
-  const [agentInventory, setAgentInventory] = useState<AgentInventory[]>([]);
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const todaysSales = await getDetailedSalesToday();
-        const yesterdaysSales = await getDetailedSalesYesterday();
-        const remainingMeters = await getRemainingMetersByType();
-        const agentInventoryData = await getAgentInventoryCount();
-
-        setTodaySales(todaysSales);
-        setYesterdaySales(yesterdaysSales);
-        setRemainingMetersByType(remainingMeters);
-        setAgentInventory(agentInventoryData);
-
-        const todayTotal = todaysSales.reduce(
-          (sum, sale) => sum + sale.total_price,
-          0
-        );
-        const yesterdayTotal = yesterdaysSales.reduce(
-          (sum, sale) => sum + sale.total_price,
-          0
-        );
-
-        setTodayTotalEarnings(todayTotal);
-        setYesterdayTotalEarnings(yesterdayTotal);
-      } catch (error) {
-        console.error("Error fetching data:", error);
-      }
-    };
-
-    fetchData();
-  }, []);
+  // Calculate totals from React Query data
+  const todayTotalEarnings = todaySales.reduce(
+    (sum, sale) => sum + sale.total_price,
+    0
+  );
+  const yesterdayTotalEarnings = yesterdaySales.reduce(
+    (sum, sale) => sum + sale.total_price,
+    0
+  );
 
   const getDateRange = (option: string): DateRange => {
     const endDate = new Date();
@@ -165,7 +96,7 @@ const DailyReportsPage = () => {
         <DailyReportPDF
           todaySales={todaySales}
           yesterdaySales={yesterdaySales}
-          remainingMetersByType={remainingMetersByType}
+          remainingMetersByType={remainingMeters}
           todayTotalEarnings={todayTotalEarnings}
           yesterdayTotalEarnings={yesterdayTotalEarnings}
           agentInventory={agentInventory}
@@ -239,7 +170,7 @@ const DailyReportsPage = () => {
             label: "Yesterday's Report",
           }}
           metrics={metrics}
-          remainingMetersByType={remainingMetersByType}
+          remainingMetersByType={remainingMeters}
           agentInventory={agentInventory}
         />
       ).toBlob();
@@ -277,7 +208,7 @@ const DailyReportsPage = () => {
           sales={filteredSales}
           dateRange={dateRange}
           metrics={metrics}
-          remainingMetersByType={remainingMetersByType}
+          remainingMetersByType={remainingMeters}
           agentInventory={agentInventory}
         />
       ).toBlob();
@@ -339,7 +270,7 @@ const DailyReportsPage = () => {
             label: "UMS Report",
           }}
           metrics={metrics}
-          remainingMetersByType={remainingMetersByType}
+          remainingMetersByType={remainingMeters}
           agentInventory={agentInventory}
         />
       ).toBlob();
@@ -389,7 +320,7 @@ const DailyReportsPage = () => {
             label: "UMS Report",
           }}
           metrics={metrics}
-          remainingMetersByType={remainingMetersByType}
+          remainingMetersByType={remainingMeters}
           agentInventory={agentInventory}
         />
       ).toBlob();
@@ -401,6 +332,20 @@ const DailyReportsPage = () => {
       setIsGeneratingOther(false);
     }
   };
+
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
+
+  if (!isClient) {
+    return (
+      <div className='flex min-h-[60vh] items-center justify-center'>
+        <p className='text-sm text-muted-foreground'>
+          Preparing daily reports…
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className='mt-20 lg:mt-8 transition-all duration-300 ease-in-out mx-auto w-full sm:w-auto overflow-hidden px-2 sm:px-4 relative'>

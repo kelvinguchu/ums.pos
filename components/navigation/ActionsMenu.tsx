@@ -54,7 +54,7 @@ export function ActionsMenu({
   actionStateMap,
   user,
   currentUserData,
-}: ActionsMenuProps) {
+}: Readonly<ActionsMenuProps>) {
   return (
     <SidebarGroup className='mt-2'>
       <SidebarGroupLabel className='px-2 text-sm font-medium text-gray-500 uppercase tracking-wider'>

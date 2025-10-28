@@ -4,6 +4,22 @@ import { eq, asc } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { userProfiles } from "@/lib/db/schema";
 import { createClient } from "@/lib/utils/supabase/server";
+import { createClient as createAdminClient } from "@supabase/supabase-js";
+
+// Supabase Admin client for user management
+const getSupabaseAdmin = () => {
+  if (
+    !process.env.NEXT_PUBLIC_SUPABASE_URL ||
+    !process.env.SUPABASE_SERVICE_ROLE_KEY
+  ) {
+    throw new Error("Missing Supabase environment variables");
+  }
+
+  return createAdminClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL,
+    process.env.SUPABASE_SERVICE_ROLE_KEY
+  );
+};
 
 /**
  * Checks if a user is active in the database
@@ -125,43 +141,39 @@ export async function createUser(
   role: string,
   name: string
 ) {
-  const response = await fetch("/api/create-user", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ email, password, role, name }),
-  });
+  try {
+    const supabaseAdmin = getSupabaseAdmin();
 
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.message);
+    // Create user with Supabase Admin
+    const { data, error } = await supabaseAdmin.auth.admin.createUser({
+      email,
+      password,
+      email_confirm: true,
+    });
+
+    if (error) throw error;
+    if (!data.user) throw new Error("Failed to create user");
+
+    // Insert user profile
+    const { error: profileError } = await supabaseAdmin
+      .from("user_profiles")
+      .insert({
+        id: data.user.id,
+        role,
+        is_active: true,
+        name,
+      });
+
+    if (profileError) throw profileError;
+
+    return {
+      success: true,
+      message: "User created successfully",
+      user: data.user,
+    };
+  } catch (error: any) {
+    throw new Error(error.message || "Failed to create user");
   }
-
-  return await response.json();
-}
-
-// Invite functionality removed - no longer needed
-
-export async function togglePushNotifications(
-  userId: string,
-  enabled: boolean
-) {
-  const [data] = await db
-    .update(userProfiles)
-    .set({ push_enabled: enabled })
-    .where(eq(userProfiles.id, userId))
-    .returning({ push_enabled: userProfiles.push_enabled });
-
-  return data?.push_enabled === true;
-}
-
-export async function getPushNotificationStatus(userId: string) {
-  const [data] = await db
-    .select({ push_enabled: userProfiles.push_enabled })
-    .from(userProfiles)
-    .where(eq(userProfiles.id, userId))
-    .limit(1);
-
-  return data?.push_enabled === true;
 }
 
 export async function changePassword(userId: string, newPassword: string) {
@@ -185,6 +197,33 @@ export async function changePassword(userId: string, newPassword: string) {
     return { success: true };
   } catch (error: any) {
     console.error("Error changing password:", error);
+    throw new Error(error.message || "Failed to change password");
+  }
+}
+
+/**
+ * Change a user's password using admin privileges (service role)
+ */
+export async function adminChangePassword(userId: string, newPassword: string) {
+  try {
+    if (newPassword.length < 6) {
+      throw new Error("Password must be at least 6 characters long");
+    }
+
+    const supabaseAdmin = getSupabaseAdmin();
+
+    // Use admin API to update user's password
+    const { error } = await supabaseAdmin.auth.admin.updateUserById(userId, {
+      password: newPassword,
+    });
+
+    if (error) {
+      throw error;
+    }
+
+    return { success: true };
+  } catch (error: any) {
+    console.error("Admin password change error:", error);
     throw new Error(error.message || "Failed to change password");
   }
 }

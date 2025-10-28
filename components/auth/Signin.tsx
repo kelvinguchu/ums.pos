@@ -35,7 +35,7 @@ const SignIn = () => {
     try {
       const email = `${emailPrefix}@umskenya.com`;
 
-      const { data, error: signInError } = await supabase.auth.signInWithPassword({
+      const { error: signInError } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
@@ -47,8 +47,12 @@ const SignIn = () => {
         throw signInError;
       }
 
-      // Let the middleware handle the redirect automatically
-      router.push("/dashboard");
+      // Immediately navigate - use replace to avoid back button issues
+      // The middleware will handle session verification
+      router.replace("/dashboard");
+
+      // Optional: Force a hard navigation for even faster perceived performance
+      // window.location.href = "/dashboard";
     } catch (error: any) {
       const errorMessage = error?.message || "Failed to sign in";
       setError(errorMessage);
@@ -56,14 +60,13 @@ const SignIn = () => {
       if (error.message?.includes("Invalid login credentials")) {
         setPassword("");
       }
-    } finally {
       setIsLoading(false);
     }
+    // Don't set isLoading to false on success - keep loading state until navigation completes
   };
 
   return (
-    <div
-      className='flex flex-col items-center justify-center space-y-4 min-h-screen bg-background'>
+    <div className='flex flex-col items-center justify-center space-y-4 min-h-screen bg-background'>
       <Image
         src='/logo.png'
         alt='logo'
@@ -135,7 +138,7 @@ const SignIn = () => {
             {error && <p className='text-red-500 text-sm mt-2'>{error}</p>}
             <Button
               type='submit'
-              className='w-full mt-4 bg-[#000080] hover:bg-[#000061]'
+              className='w-full mt-4 cursor-pointer bg-primary hover:bg-[#000061]'
               disabled={isLoading}>
               {isLoading ? (
                 <>
@@ -150,7 +153,7 @@ const SignIn = () => {
         </CardContent>
         <CardFooter>
           <p className='text-sm text-center w-full'>
-            Don't have an account? Contact an admin for an invitation.
+            Don't have an account? Contact an admin.
           </p>
         </CardFooter>
       </Card>

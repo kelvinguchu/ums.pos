@@ -1,11 +1,19 @@
 "use client";
-import React, { useEffect, useState, useCallback, useMemo } from "react";
+import React, { useState, useCallback, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useSalesData } from "./hooks/useSalesData";
+import {
+  useRemainingMetersByType,
+  useAgentInventory,
+} from "./hooks/useReportsData";
 import { SalesTable } from "./SalesTable";
 import { DailyReportsFilters } from "./DailyReportsFilters";
 import { DailyReportsSummary } from "./DailyReportsSummary";
-import type { DateRange } from "@/components/dailyreports/types";
+import type {
+  DateRange,
+  MeterDetail,
+  SaleWithMeters,
+} from "@/components/dailyreports/types";
 import { ErrorBoundary } from "./ErrorBoundary";
 import { Button } from "@/components/ui/button";
 import { Download, RefreshCw } from "lucide-react";
@@ -18,10 +26,6 @@ import {
 import { pdf } from "@react-pdf/renderer";
 import TableReportPDF from "@/components/sharedcomponents/TableReportPDF";
 import { generateCSV } from "@/lib/utils/csvGenerator";
-import {
-  getRemainingMetersByType,
-  getAgentInventoryCount,
-} from "@/lib/actions/reports";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
@@ -50,6 +54,14 @@ interface AgentInventory {
   with_agents: number;
 }
 
+const formatSerials = (meters?: MeterDetail[], separator: string = ", ") => {
+  if (!meters?.length) {
+    return "N/A";
+  }
+
+  return meters.map((meter) => meter.serial_number).join(separator);
+};
+
 export default function DailyReports({
   selectedDateRange,
   setSelectedDateRange,
@@ -59,18 +71,43 @@ export default function DailyReports({
   const [selectedType, setSelectedType] = useState("all");
   const itemsPerPage = 10;
 
-  const { salesData, isLoading, isError, error, refetch } = useSalesData();
+  const { salesData, isLoading, isFetching, isError, error, refetch } =
+    useSalesData();
 
-  const [remainingMetersByType, setRemainingMetersByType] = useState<
-    RemainingMetersByType[]
-  >([]);
-  const [agentInventory, setAgentInventory] = useState<AgentInventory[]>([]);
+  // Use React Query hooks instead of useEffect - shares cache with parent
+  const remainingMetersQuery = useRemainingMetersByType();
+  const agentInventoryQuery = useAgentInventory();
+
+  // Normalize data with memoization
+  const remainingMetersByType = useMemo(() => {
+    const rawData = remainingMetersQuery.data || [];
+    return METER_TYPES.map((type) => {
+      const existing = rawData.find(
+        (meter: any) => meter.type.toLowerCase() === type.toLowerCase()
+      );
+      return {
+        type: type,
+        remaining_meters: existing?.remaining_meters || 0,
+      };
+    });
+  }, [remainingMetersQuery.data]);
+
+  const agentInventory = useMemo(() => {
+    const rawData = agentInventoryQuery.data || [];
+    return METER_TYPES.map((type) => {
+      const existing = rawData.find(
+        (inventory: any) => inventory.type.toLowerCase() === type.toLowerCase()
+      );
+      return {
+        type: type,
+        with_agents: existing?.with_agents || 0,
+      };
+    });
+  }, [agentInventoryQuery.data]);
 
   // Memoize filtered sales
   const filteredSales = useMemo(() => {
-    let filtered = selectedDateRange
-      ? salesData.todaySales
-      : salesData.todaySales;
+    let filtered = salesData.todaySales as SaleWithMeters[];
 
     if (searchUser) {
       filtered = filtered.filter((sale) =>
@@ -126,6 +163,7 @@ export default function DailyReports({
       "Customer Type",
       "County",
       "Contact",
+      "Serial Numbers",
     ];
     const data = dataToExport.map((sale) => [
       sale.user_name,
@@ -136,6 +174,7 @@ export default function DailyReports({
       sale.customer_type || "",
       sale.customer_county || "",
       sale.customer_contact || "",
+      formatSerials(sale.meters, "\n"),
     ]);
 
     const blob = await pdf(
@@ -171,61 +210,32 @@ export default function DailyReports({
       "Customer Type": sale.customer_type,
       County: sale.customer_county,
       Contact: sale.customer_contact,
+      "Serial Numbers": formatSerials(sale.meters),
     }));
 
     generateCSV(csvData, "daily_sales_report");
   };
 
-  useEffect(() => {
-    async function fetchData() {
-      try {
-        const remainingMeters = await getRemainingMetersByType();
-        const agentInventoryData = await getAgentInventoryCount();
-
-        // Ensure all meter types are included in remainingMeters with proper typing
-        const normalizedRemainingMeters: RemainingMetersByType[] =
-          METER_TYPES.map((type) => {
-            const existing = remainingMeters.find(
-              (meter) => meter.type.toLowerCase() === type.toLowerCase()
-            );
-            return {
-              type: type, // This ensures type is one of the valid MeterType values
-              remaining_meters: existing?.remaining_meters || 0,
-            };
-          });
-
-        // Ensure all meter types are included in agentInventory with proper typing
-        const normalizedAgentInventory: AgentInventory[] = METER_TYPES.map(
-          (type) => {
-            const existing = agentInventoryData.find(
-              (inventory) => inventory.type.toLowerCase() === type.toLowerCase()
-            );
-            return {
-              type: type, // This ensures type is one of the valid MeterType values
-              with_agents: existing?.with_agents || 0,
-            };
-          }
-        );
-
-        setRemainingMetersByType(normalizedRemainingMeters);
-        setAgentInventory(normalizedAgentInventory);
-      } catch (error) {
-        console.error("Error fetching data:", error);
-      }
-    }
-
-    fetchData();
-  }, []);
-
   // Manual refresh handler
   const handleRefresh = async () => {
     try {
-      await refetch();
+      await Promise.all([
+        refetch({ throwOnError: true }),
+        agentInventoryQuery.refetch({
+          cancelRefetch: false,
+          throwOnError: true,
+        }),
+      ]);
       toast.success("Data refreshed successfully");
     } catch (error) {
       toast.error("Failed to refresh data");
     }
   };
+
+  const isRefreshing =
+    (isFetching && !isLoading) ||
+    agentInventoryQuery.isFetching ||
+    remainingMetersQuery.isFetching;
 
   if (isError) {
     return (
@@ -254,9 +264,12 @@ export default function DailyReports({
                 variant='outline'
                 size='icon'
                 onClick={handleRefresh}
-                disabled={isLoading}>
+                disabled={isLoading || isRefreshing}>
                 <RefreshCw
-                  className={cn("h-4 w-4", isLoading && "animate-spin")}
+                  className={cn(
+                    "h-4 w-4 transition-transform",
+                    (isLoading || isRefreshing) && "animate-spin"
+                  )}
                 />
               </Button>
             </div>

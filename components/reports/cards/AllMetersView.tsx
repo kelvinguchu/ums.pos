@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo } from "react";
 import { useMetersData, MeterStatusFilter } from "../hooks/useMetersData";
-import { MeterWithStatus } from "@/lib/actions/exports";
 import {
   Table,
   TableBody,
@@ -26,19 +25,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  SheetHeader,
-  SheetTitle,
-  SheetDescription,
-} from "@/components/ui/sheet";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { getMeterTypeBadgeClass } from "../utils/meterTypeConfig";
-import { cn } from "@/lib/utils";
 import {
   Search,
-  Download,
   Package,
   User,
   ShoppingCart,
@@ -55,9 +47,10 @@ import { Card } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { toast } from "sonner";
 import { generateCSV } from "@/lib/utils/csvGenerator";
-import { getAllMetersForExport } from "@/lib/actions/exports";
+import { getAllMetersForExport, MeterWithStatus } from "@/lib/actions/exports";
 import { superSearchMeter } from "@/lib/actions/meters";
 import { Skeleton } from "@/components/ui/skeleton";
+import { cn } from "@/lib/utils";
 
 // Define meter types
 const METER_TYPES = [
@@ -107,8 +100,16 @@ function debounce<T extends (...args: any[]) => any>(
 }
 
 const AllMetersView: React.FC = () => {
-  const { meters, totalCount, isLoading, error, pagination, filters, refetch } =
-    useMetersData(25); // Reduce to 25 entries per page
+  const {
+    meters,
+    totalCount,
+    isLoading,
+    isFetching,
+    error,
+    pagination,
+    filters,
+    refetch,
+  } = useMetersData(25); // Reduce to 25 entries per page
 
   const [searchInput, setSearchInput] = useState("");
   const [isExporting, setIsExporting] = useState(false);
@@ -392,12 +393,15 @@ const AllMetersView: React.FC = () => {
 
   const handleRefresh = async () => {
     try {
-      await refetch();
+      await refetch({ throwOnError: true });
       toast.success("Meter data has been refreshed");
     } catch (error) {
+      console.error("Failed to refresh meter data:", error);
       toast.error("Failed to refresh meter data");
     }
   };
+
+  const isRefreshing = isFetching && !isLoading;
 
   const renderMeterDetails = (meter: MeterWithStatus) => {
     return (
@@ -544,184 +548,194 @@ const AllMetersView: React.FC = () => {
   );
 
   return (
-    <div className='flex flex-col h-full'>
-      <div className='flex justify-between items-center mb-4 pr-8'>
-        <h2 className='text-2xl font-bold'>All Meters</h2>
-        <div className='flex items-center gap-2'>
-          <Button variant='outline' onClick={handleRefresh}>
-            <RefreshCw className='h-4 w-4 mr-2' />
-            Refresh
-          </Button>
-
-          {/* Advanced Search Input */}
-          <div className='relative w-64' ref={searchRef}>
-            <div className='relative w-full'>
-              <Search className='absolute left-2 top-2.5 h-4 w-4 text-muted-foreground' />
-              <Input
-                type='text'
-                placeholder='Search by serial number...'
-                value={searchInput}
-                onChange={handleSearchInputChange}
-                onKeyDown={handleKeyDown}
-                className='pl-8 pr-8 w-full bg-gray-50/50 border-gray-200 focus:bg-white transition-colors'
-                onFocus={() => setIsSearchOpen(searchInput.length >= 3)}
+    <div className='flex flex-col h-full overflow-hidden'>
+      <div className='flex-none bg-gray-50 pb-4 pt-2 px-6 border-b border-gray-200'>
+        <div className='flex justify-between items-center mb-4 pr-12'>
+          <h2 className='text-2xl font-bold'>All Meters</h2>
+          <div className='flex items-center gap-2'>
+            <Button
+              variant='outline'
+              onClick={handleRefresh}
+              disabled={isLoading || isRefreshing}
+              aria-label='Refresh meter data'>
+              <RefreshCw
+                className={cn(
+                  "h-4 w-4 mr-2 transition-transform",
+                  (isLoading || isRefreshing) && "animate-spin"
+                )}
               />
-              {searchInput && (
-                <button
-                  onClick={clearSearch}
-                  className='absolute right-2 top-2.5 text-gray-400 hover:text-gray-600'>
-                  <X className='h-4 w-4' />
-                </button>
-              )}
-              {isSearchLoading && (
-                <div className='absolute right-2 top-2.5'>
-                  <Loader2 className='h-4 w-4 animate-spin' />
+              Refresh
+            </Button>
+
+            {/* Advanced Search Input */}
+            <div className='relative w-64' ref={searchRef}>
+              <div className='relative w-full'>
+                <Search className='absolute left-2 top-2.5 h-4 w-4 text-muted-foreground' />
+                <Input
+                  type='text'
+                  placeholder='Search by serial number...'
+                  value={searchInput}
+                  onChange={handleSearchInputChange}
+                  onKeyDown={handleKeyDown}
+                  className='pl-8 pr-8 w-full bg-gray-50/50 border-gray-200 focus:bg-white transition-colors'
+                  onFocus={() => setIsSearchOpen(searchInput.length >= 3)}
+                />
+                {searchInput && (
+                  <button
+                    onClick={clearSearch}
+                    className='absolute right-2 top-2.5 text-gray-400 hover:text-gray-600'>
+                    <X className='h-4 w-4' />
+                  </button>
+                )}
+                {isSearchLoading && (
+                  <div className='absolute right-2 top-2.5'>
+                    <Loader2 className='h-4 w-4 animate-spin' />
+                  </div>
+                )}
+              </div>
+
+              {/* Search Results Popover */}
+              {isSearchOpen && searchInput.length >= 3 && (
+                <div className='absolute mt-1 w-[350px] right-0 bg-white rounded-md border shadow-lg z-50'>
+                  <div className='max-h-[60vh] overflow-y-auto p-2'>
+                    {isSearchLoading ? (
+                      <div className='flex items-center justify-center py-4'>
+                        <Loader2 className='h-6 w-6 animate-spin text-primary' />
+                      </div>
+                    ) : searchResults.length === 0 ? (
+                      <div className='text-center py-4 text-gray-500'>
+                        No meters found
+                      </div>
+                    ) : (
+                      <div className='space-y-2'>
+                        {searchResults.map((result: any) => (
+                          <div
+                            key={result.serial_number}
+                            className='flex flex-col p-3 hover:bg-gray-50 rounded-md gap-2 border-b last:border-0'
+                            onClick={() => {
+                              // Set the filter to match this meter's status
+                              filters.handleStatusFilterChange(
+                                result.status as MeterStatusFilter
+                              );
+                              // Set search term to this meter's serial number
+                              filters.handleSearchChange(result.serial_number);
+                              setSearchInput(result.serial_number);
+                              setIsSearchOpen(false);
+                            }}>
+                            <div>
+                              <div className='font-medium text-primary flex items-center gap-2'>
+                                {result.serial_number}
+                                {result.status === "in_stock" && (
+                                  <Badge className='bg-green-500'>
+                                    <Check className='mr-1 h-3 w-3' />
+                                    In Stock
+                                  </Badge>
+                                )}
+                                {result.status === "with_agent" && (
+                                  <Badge className='bg-orange-500'>
+                                    <User className='mr-1 h-3 w-3' />
+                                    With Agent
+                                  </Badge>
+                                )}
+                                {result.status === "sold" && (
+                                  <Badge className='bg-blue-500'>
+                                    <DollarSign className='mr-1 h-3 w-3' />
+                                    Sold
+                                  </Badge>
+                                )}
+                                {result.status === "replaced" && (
+                                  <Badge className='bg-purple-500'>
+                                    <AlertCircle className='mr-1 h-3 w-3' />
+                                    Replaced
+                                  </Badge>
+                                )}
+                                {result.status === "faulty" && (
+                                  <Badge className='bg-red-500'>
+                                    <AlertTriangle className='mr-1 h-3 w-3' />
+                                    Faulty
+                                  </Badge>
+                                )}
+                              </div>
+                              {result.type && (
+                                <div className='text-sm text-gray-500 mt-1'>
+                                  Type: {result.type}
+                                </div>
+                              )}
+                              {result.status === "with_agent" &&
+                                result.agent && (
+                                  <div className='text-sm text-gray-500 mt-1'>
+                                    Agent: {result.agent.name},{" "}
+                                    {result.agent.location}
+                                  </div>
+                                )}
+                              {(result.status === "sold" ||
+                                result.status === "replaced") &&
+                                result.sale_details && (
+                                  <div className='text-sm text-gray-500 space-y-1 mt-2'>
+                                    <div>
+                                      Sold on:{" "}
+                                      {format(
+                                        new Date(result.sale_details.sold_at),
+                                        "MMM d, yyyy"
+                                      )}
+                                    </div>
+                                    <div>
+                                      Sold by: {result.sale_details.sold_by}
+                                    </div>
+                                    <div>
+                                      To: {result.sale_details.recipient},{" "}
+                                      {result.sale_details.destination}
+                                    </div>
+                                  </div>
+                                )}
+                              {result.status === "faulty" &&
+                                result.fault_details && (
+                                  <div className='text-sm text-gray-500 space-y-1 mt-2'>
+                                    <div>
+                                      Fault:{" "}
+                                      {result.fault_details.fault_description}
+                                    </div>
+                                    {result.fault_details.returned_at && (
+                                      <div>
+                                        Returned on:{" "}
+                                        {format(
+                                          new Date(
+                                            result.fault_details.returned_at
+                                          ),
+                                          "MMM d, yyyy"
+                                        )}
+                                      </div>
+                                    )}
+                                  </div>
+                                )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 </div>
               )}
             </div>
 
-            {/* Search Results Popover */}
-            {isSearchOpen && searchInput.length >= 3 && (
-              <div className='absolute mt-1 w-[350px] right-0 bg-white rounded-md border shadow-lg z-50'>
-                <div className='max-h-[60vh] overflow-y-auto p-2'>
-                  {isSearchLoading ? (
-                    <div className='flex items-center justify-center py-4'>
-                      <Loader2 className='h-6 w-6 animate-spin text-[#000080]' />
-                    </div>
-                  ) : searchResults.length === 0 ? (
-                    <div className='text-center py-4 text-gray-500'>
-                      No meters found
-                    </div>
-                  ) : (
-                    <div className='space-y-2'>
-                      {searchResults.map((result: any) => (
-                        <div
-                          key={result.serial_number}
-                          className='flex flex-col p-3 hover:bg-gray-50 rounded-md gap-2 border-b last:border-0'
-                          onClick={() => {
-                            // Set the filter to match this meter's status
-                            filters.handleStatusFilterChange(
-                              result.status as MeterStatusFilter
-                            );
-                            // Set search term to this meter's serial number
-                            filters.handleSearchChange(result.serial_number);
-                            setSearchInput(result.serial_number);
-                            setIsSearchOpen(false);
-                          }}>
-                          <div>
-                            <div className='font-medium text-[#000080] flex items-center gap-2'>
-                              {result.serial_number}
-                              {result.status === "in_stock" && (
-                                <Badge className='bg-green-500'>
-                                  <Check className='mr-1 h-3 w-3' />
-                                  In Stock
-                                </Badge>
-                              )}
-                              {result.status === "with_agent" && (
-                                <Badge className='bg-orange-500'>
-                                  <User className='mr-1 h-3 w-3' />
-                                  With Agent
-                                </Badge>
-                              )}
-                              {result.status === "sold" && (
-                                <Badge className='bg-blue-500'>
-                                  <DollarSign className='mr-1 h-3 w-3' />
-                                  Sold
-                                </Badge>
-                              )}
-                              {result.status === "replaced" && (
-                                <Badge className='bg-purple-500'>
-                                  <AlertCircle className='mr-1 h-3 w-3' />
-                                  Replaced
-                                </Badge>
-                              )}
-                              {result.status === "faulty" && (
-                                <Badge className='bg-red-500'>
-                                  <AlertTriangle className='mr-1 h-3 w-3' />
-                                  Faulty
-                                </Badge>
-                              )}
-                            </div>
-                            {result.type && (
-                              <div className='text-sm text-gray-500 mt-1'>
-                                Type: {result.type}
-                              </div>
-                            )}
-                            {result.status === "with_agent" && result.agent && (
-                              <div className='text-sm text-gray-500 mt-1'>
-                                Agent: {result.agent.name},{" "}
-                                {result.agent.location}
-                              </div>
-                            )}
-                            {(result.status === "sold" ||
-                              result.status === "replaced") &&
-                              result.sale_details && (
-                                <div className='text-sm text-gray-500 space-y-1 mt-2'>
-                                  <div>
-                                    Sold on:{" "}
-                                    {format(
-                                      new Date(result.sale_details.sold_at),
-                                      "MMM d, yyyy"
-                                    )}
-                                  </div>
-                                  <div>
-                                    Sold by: {result.sale_details.sold_by}
-                                  </div>
-                                  <div>
-                                    To: {result.sale_details.recipient},{" "}
-                                    {result.sale_details.destination}
-                                  </div>
-                                </div>
-                              )}
-                            {result.status === "faulty" &&
-                              result.fault_details && (
-                                <div className='text-sm text-gray-500 space-y-1 mt-2'>
-                                  <div>
-                                    Fault:{" "}
-                                    {result.fault_details.fault_description}
-                                  </div>
-                                  {result.fault_details.returned_at && (
-                                    <div>
-                                      Returned on:{" "}
-                                      {format(
-                                        new Date(
-                                          result.fault_details.returned_at
-                                        ),
-                                        "MMM d, yyyy"
-                                      )}
-                                    </div>
-                                  )}
-                                </div>
-                              )}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
+            <Button
+              variant='outline'
+              size='sm'
+              onClick={handleExportCSV}
+              disabled={isExporting || isLoading}
+              className='ml-2'>
+              {isExporting ? (
+                <>
+                  <span className='animate-spin mr-2'>⏳</span>
+                  Exporting...
+                </>
+              ) : (
+                "Export CSV"
+              )}
+            </Button>
           </div>
-
-          <Button
-            variant='outline'
-            size='sm'
-            onClick={handleExportCSV}
-            disabled={isExporting || isLoading}
-            className='ml-2'>
-            {isExporting ? (
-              <>
-                <span className='animate-spin mr-2'>⏳</span>
-                Exporting...
-              </>
-            ) : (
-              "Export CSV"
-            )}
-          </Button>
         </div>
-      </div>
 
-      <ScrollArea className='flex-1'>
         <Tabs
           defaultValue='in_stock'
           className='w-full'
@@ -729,7 +743,7 @@ const AllMetersView: React.FC = () => {
           onValueChange={(value) => {
             filters.handleStatusFilterChange(value as MeterStatusFilter);
           }}>
-          <div className='flex justify-between items-center mb-4 pr-2'>
+          <div className='flex justify-between items-center mb-4'>
             <TabsList>
               <TabsTrigger value='in_stock'>In Stock</TabsTrigger>
               <TabsTrigger value='with_agent'>With Agent</TabsTrigger>
@@ -744,19 +758,29 @@ const AllMetersView: React.FC = () => {
                 filters.handleTypeFilterChange(value || null);
               }}>
               <SelectTrigger className='w-[150px]'>
-                <SelectValue>All Types</SelectValue>
+                <SelectValue placeholder='All Types' />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value='all'>All Types</SelectItem>
                 {METER_TYPES.map((type: string) => (
                   <SelectItem key={type} value={type}>
-                    {type}
+                    {type.charAt(0).toUpperCase() + type.slice(1)}
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
           </div>
+        </Tabs>
+      </div>
 
+      <div className='flex-1 overflow-y-auto px-6 py-4'>
+        <Tabs
+          defaultValue='in_stock'
+          className='w-full'
+          value={filters.statusFilter}
+          onValueChange={(value) => {
+            filters.handleStatusFilterChange(value as MeterStatusFilter);
+          }}>
           {/* Content for each tab */}
           {["in_stock", "with_agent", "sold", "replaced", "faulty"].map(
             (status) => (
@@ -951,7 +975,7 @@ const AllMetersView: React.FC = () => {
             )
           )}
         </Tabs>
-      </ScrollArea>
+      </div>
     </div>
   );
 };

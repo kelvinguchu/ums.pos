@@ -1,9 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import {
-  checkMeterExists,
-  checkMeterExistsInSoldMeters,
-  checkMeterExistsInAgentInventory,
-} from "@/lib/actions/meters";
+import { checkMeterExistsAnywhere } from "@/lib/actions/meters";
 
 interface Meter {
   serialNumber: string;
@@ -42,6 +38,12 @@ export function useMeterValidation(
     exists: false,
     message: "Input Serial Number",
   });
+  const [lastCheck, setLastCheck] = useState<{
+    serial: string;
+    existsInStock: boolean;
+    existsInSold: boolean;
+    existsInAgent: boolean;
+  } | null>(null);
 
   const handleRemoveHighlight = useCallback((element: Element | null) => {
     element?.classList.remove("bg-yellow-100");
@@ -67,10 +69,16 @@ export function useMeterValidation(
 
     const checkSerialNumber = async () => {
       if (!serialNumber.trim()) {
-        setValidationResult({
-          exists: false,
-          message: "Input Serial Number",
+        setValidationResult((prev) => {
+          if (!prev.exists && prev.message === "Input Serial Number") {
+            return prev;
+          }
+          return {
+            exists: false,
+            message: "Input Serial Number",
+          };
         });
+        setLastCheck(null);
         setIsChecking(false);
         return;
       }
@@ -96,32 +104,91 @@ export function useMeterValidation(
             ),
             existingIndex,
           });
+          setLastCheck(null);
           setIsChecking(false);
           return;
         }
 
-        // Check database
-        const exists = await checkMeterExists(normalizedSerial);
+        // Check database using combined query
+        const { existsInStock, existsInSold, existsInAgent } =
+          await checkMeterExistsAnywhere(normalizedSerial);
 
         if (isSubscribed) {
-          if (exists) {
-            setValidationResult({
-              exists: true,
-              message: "Serial Number Already Exists in Database",
+          setLastCheck({
+            serial: normalizedSerial,
+            existsInStock,
+            existsInSold,
+            existsInAgent,
+          });
+
+          if (existsInStock) {
+            setValidationResult((prev) => {
+              if (
+                prev.exists &&
+                prev.message === "Serial Number Already Exists in Stock"
+              ) {
+                return prev;
+              }
+              return {
+                exists: true,
+                message: "Serial Number Already Exists in Stock",
+              };
             });
             onToast({
               title: "Error",
-              description: "Serial Number Already Exists in Database",
+              description: "Serial Number Already Exists in Stock",
+              variant: "destructive",
+            });
+          } else if (existsInSold) {
+            setValidationResult((prev) => {
+              if (
+                prev.exists &&
+                prev.message === "Meter already exists in sold meters"
+              ) {
+                return prev;
+              }
+              return {
+                exists: true,
+                message: "Meter already exists in sold meters",
+              };
+            });
+            onToast({
+              title: "Error",
+              description: "Meter already exists in sold meters",
+              variant: "destructive",
+            });
+          } else if (existsInAgent) {
+            setValidationResult((prev) => {
+              if (
+                prev.exists &&
+                prev.message === "Meter already exists in agent inventory"
+              ) {
+                return prev;
+              }
+              return {
+                exists: true,
+                message: "Meter already exists in agent inventory",
+              };
+            });
+            onToast({
+              title: "Error",
+              description: "Meter already exists in agent inventory",
               variant: "destructive",
             });
           } else {
-            setValidationResult({
-              exists: false,
-              message: "",
+            setValidationResult((prev) => {
+              if (!prev.exists && prev.message === "") {
+                return prev;
+              }
+              return {
+                exists: false,
+                message: "",
+              };
             });
           }
         }
       } catch (error) {
+        console.error("Validation error:", error);
         if (isSubscribed) {
           setValidationResult({
             exists: false,
@@ -153,12 +220,19 @@ export function useMeterValidation(
     exists: validationResult.exists,
     errorMessage: validationResult.message,
     setValidationResult,
+    lastCheck,
   };
 }
 
 export async function validateMeterBeforeAdd(
   serialNumber: string,
-  meters: Meter[]
+  meters: Meter[],
+  lastCheck?: {
+    serial: string;
+    existsInStock: boolean;
+    existsInSold: boolean;
+    existsInAgent: boolean;
+  }
 ): Promise<{ isValid: boolean; error?: string }> {
   const normalizedSerial = normalizeSerialNumber(serialNumber);
 
@@ -168,14 +242,19 @@ export async function validateMeterBeforeAdd(
     return { isValid: false, error: "Serial Number Already in the Table" };
   }
 
-  // Check all existence conditions in parallel
-  const [existsInDB, existsInSold, existsInAgent] = await Promise.all([
-    checkMeterExists(normalizedSerial),
-    checkMeterExistsInSoldMeters(normalizedSerial),
-    checkMeterExistsInAgentInventory(normalizedSerial),
-  ]);
+  // Use the combined check function for better performance
+  let existsInStock: boolean;
+  let existsInSold: boolean;
+  let existsInAgent: boolean;
 
-  if (existsInDB) {
+  if (lastCheck && lastCheck.serial === normalizedSerial) {
+    ({ existsInStock, existsInSold, existsInAgent } = lastCheck);
+  } else {
+    ({ existsInStock, existsInSold, existsInAgent } =
+      await checkMeterExistsAnywhere(normalizedSerial));
+  }
+
+  if (existsInStock) {
     return {
       isValid: false,
       error: "Serial Number Already Exists in Database",

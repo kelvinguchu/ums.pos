@@ -13,12 +13,11 @@ import { useNotifications } from "@/contexts/NotificationContext";
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { getCurrentUser } from "@/lib/actions/users";
-import { useEffect, useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { toast } from "sonner";
 import { useInfiniteQuery, useQueryClient } from "@tanstack/react-query";
 import { getNotifications } from "@/lib/actions/notifications";
+import { useAuth } from "@/contexts/AuthContext";
 
 // Type for notification metadata
 type MeterSaleMetadata = {
@@ -58,7 +57,7 @@ type NotificationListProps = Readonly<{
   currentUserId: string;
   scrollContainerRef: React.RefObject<HTMLDivElement | null>;
   onScrollToTop: () => void;
-  onMarkAsRead: (notificationId: string, userId: string) => Promise<void>;
+  onMarkAsRead: (notificationId: string) => Promise<void>;
   fetchNextPage: () => void;
   hasNextPage: boolean;
   isFetchingNextPage: boolean;
@@ -77,7 +76,7 @@ function NotificationList({
 }: NotificationListProps) {
   const handleNotificationClick = (notification: NotificationWithMetadata) => {
     if (!notification.is_read) {
-      onMarkAsRead(notification.id, currentUserId);
+      onMarkAsRead(notification.id);
     }
   };
 
@@ -198,14 +197,12 @@ function NotificationList({
 // HeaderContent component extracted outside
 type HeaderContentProps = Readonly<{
   unreadCount: number;
-  currentUserId: string;
-  onMarkAllAsRead: (userId: string) => Promise<void>;
+  onMarkAllAsRead: () => Promise<void>;
   queryClient: ReturnType<typeof useQueryClient>;
 }>;
 
 function HeaderContent({
   unreadCount,
-  currentUserId,
   onMarkAllAsRead,
   queryClient,
 }: HeaderContentProps) {
@@ -214,15 +211,13 @@ function HeaderContent({
   const handleMarkAllAsRead = async () => {
     setIsMarkingAsRead(true);
     try {
-      await onMarkAllAsRead(currentUserId);
+      await onMarkAllAsRead();
       // Invalidate the notifications query to refetch with updated data
       await queryClient.invalidateQueries({
-        queryKey: ["notifications", currentUserId],
+        queryKey: ["notifications"],
       });
-      toast.success("All notifications marked as read");
     } catch (error) {
       console.error("Error marking all as read:", error);
-      toast.error("Failed to mark notifications as read");
     } finally {
       setIsMarkingAsRead(false);
     }
@@ -246,9 +241,8 @@ function HeaderContent({
 }
 
 export function NotificationBell() {
-  const { unreadCount, markAsRead, markAllAsRead, refreshNotifications } =
-    useNotifications();
-  const [currentUser, setCurrentUser] = useState<any>(null);
+  const { unreadCount, markAsRead, markAllAsRead } = useNotifications();
+  const { user } = useAuth();
   const isMobile = useIsMobile();
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [isOpen, setIsOpen] = useState(false);
@@ -256,27 +250,15 @@ export function NotificationBell() {
 
   const NOTIFICATIONS_PER_PAGE = 10;
 
-  // Fetch user on mount
-  useEffect(() => {
-    const fetchUser = async () => {
-      const user = await getCurrentUser();
-      setCurrentUser(user);
-      if (user) {
-        refreshNotifications(user.id);
-      }
-    };
-    fetchUser();
-  }, [refreshNotifications]);
-
-  // TanStack Query infinite query
+  // TanStack Query infinite query - only fetch when sheet is open
   const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading } =
     useInfiniteQuery({
-      queryKey: ["notifications", currentUser?.id],
+      queryKey: ["notifications", user?.id],
       queryFn: async ({ pageParam }) => {
-        if (!currentUser?.id) return { notifications: [], hasMore: false };
+        if (!user?.id) return { notifications: [], hasMore: false };
 
         const notifications = await getNotifications(
-          currentUser.id,
+          user.id,
           NOTIFICATIONS_PER_PAGE,
           pageParam
         );
@@ -284,7 +266,7 @@ export function NotificationBell() {
         // Process notifications to add is_read flag
         const processedNotifications = notifications.map((notification) => ({
           ...notification,
-          is_read: notification.read_by?.includes(currentUser.id) || false,
+          is_read: notification.read_by?.includes(user.id) || false,
         }));
 
         return {
@@ -297,8 +279,9 @@ export function NotificationBell() {
       getNextPageParam: (lastPage) => {
         return lastPage.hasMore ? lastPage.lastId : undefined;
       },
-      enabled: !!currentUser?.id && isOpen,
+      enabled: !!user?.id && isOpen,
       staleTime: 1000 * 60 * 5, // 5 minutes
+      refetchOnWindowFocus: false, // Don't refetch on window focus to reduce requests
     });
 
   // Flatten all pages into a single array and remove duplicates
@@ -320,7 +303,7 @@ export function NotificationBell() {
     }
   }, []);
 
-  if (!currentUser) return null;
+  if (!user) return null;
 
   return (
     <Sheet open={isOpen} onOpenChange={setIsOpen}>
@@ -351,7 +334,6 @@ export function NotificationBell() {
           <SheetTitle className='text-gray-900'>
             <HeaderContent
               unreadCount={unreadCount}
-              currentUserId={currentUser.id}
               onMarkAllAsRead={markAllAsRead}
               queryClient={queryClient}
             />
@@ -367,7 +349,7 @@ export function NotificationBell() {
           <NotificationList
             notifications={uniqueNotifications as NotificationWithMetadata[]}
             isMobile={isMobile}
-            currentUserId={currentUser.id}
+            currentUserId={user.id}
             scrollContainerRef={scrollContainerRef}
             onScrollToTop={handleScrollToTop}
             onMarkAsRead={markAsRead}

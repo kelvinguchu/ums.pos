@@ -14,6 +14,7 @@ import {
   count,
 } from "drizzle-orm";
 import { createNotification } from "./notifications";
+import { clearMetersCache } from "./meters";
 import { db } from "../db";
 import {
   soldMeters,
@@ -23,7 +24,7 @@ import {
   faultyReturns,
   meters as metersTable,
 } from "../db/schema";
-import { removeMeter } from "./meters";
+import { removeFromAgentInventory } from "./agents";
 
 async function checkUserActive(userId: string): Promise<boolean> {
   const [user] = await db
@@ -346,6 +347,30 @@ export async function getMetersByBatchId(batchId: string) {
   return data;
 }
 
+export async function getSaleBatchMeterDetails(batchId: string) {
+  const [batchMeta, meterRows] = await Promise.all([
+    db
+      .select({ reference_number: salesTransactions.reference_number })
+      .from(saleBatches)
+      .leftJoin(
+        salesTransactions,
+        eq(saleBatches.transaction_id, salesTransactions.id)
+      )
+      .where(eq(saleBatches.id, batchId))
+      .limit(1),
+    db
+      .select({ serial_number: soldMeters.serial_number })
+      .from(soldMeters)
+      .where(eq(soldMeters.batch_id, batchId))
+      .orderBy(soldMeters.serial_number),
+  ]);
+
+  return {
+    meters: meterRows,
+    transactionRef: batchMeta[0]?.reference_number ?? null,
+  };
+}
+
 export async function getSoldMeterBySerial(serialNumber: string) {
   const normalizedSerial = serialNumber.toUpperCase();
 
@@ -407,73 +432,102 @@ export async function returnSoldMeter({
     const healthyMeters = metersToReturn.filter((m) => m.status === "healthy");
     const faultyMeters = metersToReturn.filter((m) => m.status === "faulty");
 
-    // Handle healthy meters - these need to be moved back to meters table
-    if (healthyMeters.length > 0) {
-      // 1. First add to meters table
-      const metersToRestore = healthyMeters.map((meter) => ({
-        serial_number: meter.serial_number,
-        type: meter.type,
-        added_by: returnedBy,
-        added_at: new Date(),
-        adder_name: returnerName,
-      }));
+    const replacementMap = new Map(
+      replacements.map((replacement) => [replacement.original_id, replacement])
+    );
 
-      await db.insert(metersTable).values(metersToRestore);
+    const { invalidateStock } = await db.transaction(async (tx) => {
+      const now = new Date();
+      let stockMutated = false;
 
-      // 2. Then delete from sold_meters (since they're healthy and back in stock)
-      await db.delete(soldMeters).where(
-        inArray(
-          soldMeters.id,
-          healthyMeters.map((m) => m.id)
-        )
-      );
-    }
+      if (healthyMeters.length > 0) {
+        stockMutated = true;
+        const metersToRestore = healthyMeters.map((meter) => ({
+          serial_number: meter.serial_number.trim().toUpperCase(),
+          type: meter.type,
+          added_by: returnedBy,
+          added_at: now,
+          adder_name: returnerName,
+        }));
 
-    // Handle faulty meters
-    if (faultyMeters.length > 0) {
-      // Insert into faulty_returns table directly
-      const faultyReturnsData = faultyMeters.map((meter) => ({
-        serial_number: meter.serial_number,
-        type: meter.type,
-        returned_by: returnedBy,
-        returner_name: returnerName,
-        original_sale_id: meter.id,
-        fault_description: meter.fault_description,
-        status: "pending" as const,
-      }));
+        await tx.insert(metersTable).values(metersToRestore);
 
-      await db.insert(faultyReturns).values(faultyReturnsData);
+        await tx.delete(soldMeters).where(
+          inArray(
+            soldMeters.id,
+            healthyMeters.map((meter) => meter.id)
+          )
+        );
+      }
 
-      // Check for replacements
-      for (const meter of faultyMeters) {
-        const replacement = replacements.find(
-          (r) => r.original_id === meter.id
+      if (faultyMeters.length > 0) {
+        const faultyReturnsData = faultyMeters.map((meter) => ({
+          serial_number: meter.serial_number.trim().toUpperCase(),
+          type: meter.type,
+          returned_by: returnedBy,
+          returner_name: returnerName,
+          original_sale_id: meter.id,
+          fault_description: meter.fault_description,
+          status: "pending" as const,
+        }));
+
+        await tx.insert(faultyReturns).values(faultyReturnsData);
+
+        const faultyWithReplacements = faultyMeters.filter((meter) =>
+          replacementMap.has(meter.id)
         );
 
-        if (replacement) {
-          // Remove replacement meter from meters table (it's being used as replacement)
-          await db
-            .delete(metersTable)
-            .where(eq(metersTable.serial_number, replacement.new_serial));
+        if (faultyWithReplacements.length > 0) {
+          stockMutated = true;
+          const replacementSerials = Array.from(
+            new Set(
+              faultyWithReplacements.map((meter) =>
+                replacementMap.get(meter.id)!.new_serial.trim().toUpperCase()
+              )
+            )
+          );
 
-          // Update sold_meters record with replacement info
-          await db
-            .update(soldMeters)
-            .set({
-              status: "replaced",
-              replacement_serial: replacement.new_serial,
-              replacement_date: new Date(),
-              replacement_by: returnedBy,
-            })
-            .where(eq(soldMeters.id, meter.id));
-        } else {
-          // Mark as faulty
-          await db
+          await tx
+            .delete(metersTable)
+            .where(inArray(metersTable.serial_number, replacementSerials));
+
+          const replacementUpdates = faultyWithReplacements.map((meter) => {
+            const replacement = replacementMap.get(meter.id)!;
+            const normalizedSerial = replacement.new_serial
+              .trim()
+              .toUpperCase();
+
+            return tx
+              .update(soldMeters)
+              .set({
+                status: "replaced",
+                replacement_serial: normalizedSerial,
+                replacement_date: now,
+                replacement_by: returnedBy,
+              })
+              .where(eq(soldMeters.id, meter.id));
+          });
+
+          await Promise.all(replacementUpdates);
+        }
+
+        const faultyWithoutReplacementIds = faultyMeters
+          .filter((meter) => !replacementMap.has(meter.id))
+          .map((meter) => meter.id);
+
+        if (faultyWithoutReplacementIds.length > 0) {
+          await tx
             .update(soldMeters)
             .set({ status: "faulty" })
-            .where(eq(soldMeters.id, meter.id));
+            .where(inArray(soldMeters.id, faultyWithoutReplacementIds));
         }
       }
+
+      return { invalidateStock: stockMutated };
+    });
+
+    if (invalidateStock) {
+      await clearMetersCache();
     }
 
     return { success: true };
@@ -482,6 +536,8 @@ export async function returnSoldMeter({
     throw error;
   }
 }
+
+type DrizzleClient = typeof db;
 
 export async function createSalesTransaction({
   user_id,
@@ -503,12 +559,60 @@ export async function createSalesTransaction({
   customer_county: string;
   customer_contact: string;
   total_amount: number;
-}) {
+}): Promise<typeof salesTransactions.$inferSelect>;
+export async function createSalesTransaction(
+  {
+    user_id,
+    user_name,
+    sale_date,
+    destination,
+    recipient,
+    customer_type,
+    customer_county,
+    customer_contact,
+    total_amount,
+  }: {
+    user_id: string;
+    user_name: string;
+    sale_date: Date;
+    destination: string;
+    recipient: string;
+    customer_type: string;
+    customer_county: string;
+    customer_contact: string;
+    total_amount: number;
+  },
+  client: DrizzleClient
+): Promise<typeof salesTransactions.$inferSelect>;
+export async function createSalesTransaction(
+  {
+    user_id,
+    user_name,
+    sale_date,
+    destination,
+    recipient,
+    customer_type,
+    customer_county,
+    customer_contact,
+    total_amount,
+  }: {
+    user_id: string;
+    user_name: string;
+    sale_date: Date;
+    destination: string;
+    recipient: string;
+    customer_type: string;
+    customer_county: string;
+    customer_contact: string;
+    total_amount: number;
+  },
+  client: DrizzleClient = db
+) {
   try {
     const year = sale_date.getFullYear();
 
     // Get the current max reference number for this year
-    const [lastTransaction] = await db
+    const [lastTransaction] = await client
       .select({ reference_number: salesTransactions.reference_number })
       .from(salesTransactions)
       .where(like(salesTransactions.reference_number, `SR/${year}/%`))
@@ -529,7 +633,7 @@ export async function createSalesTransaction({
       .toString()
       .padStart(5, "0")}`;
 
-    const [data] = await db
+    const [data] = await client
       .insert(salesTransactions)
       .values({
         user_id,
@@ -911,210 +1015,250 @@ export async function processMeterSale({
   }
 
   // Step 1: Pre-validation - Check all meters exist and are available
-  console.log("Step 1: Validating all meters exist and are available...");
-  const meterIds = meters.map((m) => m.id);
-  const availableMeters = await db
-    .select({ id: metersTable.id, serial_number: metersTable.serial_number })
-    .from(metersTable)
-    .where(inArray(metersTable.id, meterIds));
+  return withActiveUserCheck(currentUser.id, async () => {
+    const notificationPayloads: Array<
+      Parameters<typeof createNotification>[0]
+    > = [];
 
-  if (availableMeters.length !== meters.length) {
-    const foundIds = new Set(availableMeters.map((m) => m.id));
-    const missingIds = meterIds.filter((id) => !foundIds.has(id));
-    throw new Error(
-      `Some meters are no longer available. Missing meter IDs: ${missingIds.join(", ")}`
-    );
-  }
+    try {
+      const result = await db.transaction(async (tx) => {
+        const meterIds = meters.map((m) => m.id);
 
-  // Check for duplicates in the input
-  const serialNumbers = meters.map((m) => m.serialNumber.toLowerCase());
-  const duplicates = serialNumbers.filter(
-    (sn, idx) => serialNumbers.indexOf(sn) !== idx
-  );
-  if (duplicates.length > 0) {
-    throw new Error(
-      `Duplicate meters detected: ${Array.from(new Set(duplicates)).join(", ")}`
-    );
-  }
+        const availableMeters = await tx
+          .select({ id: metersTable.id })
+          .from(metersTable)
+          .where(inArray(metersTable.id, meterIds));
 
-  // Check if any meters are already sold
-  const alreadySold = await db
-    .select({ serial_number: soldMeters.serial_number })
-    .from(soldMeters)
-    .where(
-      inArray(
-        soldMeters.serial_number,
-        meters.map((m) => m.serialNumber)
-      )
-    );
+        if (availableMeters.length !== meters.length) {
+          const foundIds = new Set(availableMeters.map((m) => m.id));
+          const missingIds = meterIds.filter((id) => !foundIds.has(id));
+          throw new Error(
+            `Some meters are no longer available. Missing meter IDs: ${missingIds.join(", ")}`
+          );
+        }
 
-  if (alreadySold.length > 0) {
-    throw new Error(
-      `Meters already sold: ${alreadySold.map((m) => m.serial_number).join(", ")}`
-    );
-  }
+        // Check for duplicates in the input
+        const serialNumbers = meters.map((m) => m.serialNumber.toLowerCase());
+        const duplicates = serialNumbers.filter(
+          (sn, idx) => serialNumbers.indexOf(sn) !== idx
+        );
+        if (duplicates.length > 0) {
+          throw new Error(
+            `Duplicate meters detected: ${Array.from(new Set(duplicates)).join(", ")}`
+          );
+        }
 
-  try {
-    // Step 2: Group meters by type
-    console.log("Step 2: Grouping meters by type...");
-    const metersByType = meters.reduce(
-      (acc: { [key: string]: typeof meters }, meter) => {
-        if (!acc[meter.type]) acc[meter.type] = [];
-        acc[meter.type].push(meter);
-        return acc;
-      },
-      {}
-    );
+        const normalizedSerials = meters.map((m) =>
+          m.serialNumber.trim().toUpperCase()
+        );
 
-    // Step 3: Calculate total amount
-    const totalAmount = Object.entries(metersByType).reduce(
-      (total, [type, typeMeters]) =>
-        total +
-        typeMeters.length *
-          Number.parseFloat(saleDetails.unitPrices[type] || "0"),
-      0
-    );
+        const alreadySoldSerials = await tx
+          .select({ serial_number: soldMeters.serial_number })
+          .from(soldMeters)
+          .where(inArray(soldMeters.serial_number, normalizedSerials));
 
-    console.log("Step 3: Creating sales transaction...");
-    // Step 4: Create sales transaction
-    const transactionData = await createSalesTransaction({
-      user_id: currentUser.id,
-      user_name: userName,
-      sale_date: saleDetails.saleDate,
-      destination: saleDetails.destination,
-      recipient: saleDetails.recipient,
-      customer_type: saleDetails.customerType,
-      customer_county: saleDetails.customerCounty,
-      customer_contact: saleDetails.customerContact,
-      total_amount: totalAmount,
-    });
+        if (alreadySoldSerials.length > 0) {
+          throw new Error(
+            `Meters already sold: ${alreadySoldSerials
+              .map((m) => m.serial_number)
+              .join(", ")}`
+          );
+        }
 
-    console.log(
-      `Transaction created with ID: ${transactionData.id}, Reference: ${transactionData.reference_number}`
-    );
+        const meterIdsForCheck = meterIds.filter(Boolean);
+        if (meterIdsForCheck.length > 0) {
+          const alreadySoldById = await tx
+            .select({ meter_id: soldMeters.meter_id })
+            .from(soldMeters)
+            .where(inArray(soldMeters.meter_id, meterIdsForCheck));
 
-    // Step 5: Process each meter type as a batch
-    const processedBatches: Array<{
-      batchId: string;
-      type: string;
-      count: number;
-    }> = [];
+          if (alreadySoldById.length > 0) {
+            throw new Error(
+              `Meters already sold: ${alreadySoldById
+                .map((m) => m.meter_id)
+                .filter(Boolean)
+                .join(", ")}`
+            );
+          }
+        }
 
-    for (const [type, typeMeters] of Object.entries(metersByType)) {
-      const batchAmount = typeMeters.length;
-      const typeUnitPrice = Number.parseFloat(saleDetails.unitPrices[type]);
-      const totalPrice = typeUnitPrice * batchAmount;
+        const metersByType = meters.reduce(
+          (acc: { [key: string]: typeof meters }, meter) => {
+            if (!acc[meter.type]) acc[meter.type] = [];
+            acc[meter.type].push(meter);
+            return acc;
+          },
+          {}
+        );
 
-      console.log(
-        `Step 5a: Creating batch for ${type}: ${batchAmount} meters @ ${typeUnitPrice} each`
-      );
+        const totalAmount = Object.entries(metersByType).reduce(
+          (total, [type, typeMeters]) =>
+            total +
+            typeMeters.length *
+              Number.parseFloat(saleDetails.unitPrices[type] || "0"),
+          0
+        );
 
-      // Create sale batch with transaction_id
-      const batchData = await addSaleBatch({
-        user_id: currentUser.id,
-        user_name: userName,
-        meter_type: type,
-        batch_amount: batchAmount,
-        unit_price: typeUnitPrice,
-        total_price: totalPrice,
-        destination: saleDetails.destination,
-        recipient: saleDetails.recipient,
-        customer_type: saleDetails.customerType,
-        customer_county: saleDetails.customerCounty,
-        customer_contact: saleDetails.customerContact,
-        sale_date: saleDetails.saleDate,
-        transaction_id: transactionData.id,
-      });
+        const transactionData = await createSalesTransaction(
+          {
+            user_id: currentUser.id,
+            user_name: userName,
+            sale_date: saleDetails.saleDate,
+            destination: saleDetails.destination,
+            recipient: saleDetails.recipient,
+            customer_type: saleDetails.customerType,
+            customer_county: saleDetails.customerCounty,
+            customer_contact: saleDetails.customerContact,
+            total_amount: totalAmount,
+          },
+          tx as unknown as DrizzleClient
+        );
 
-      if (!batchData?.id) {
-        throw new Error(`Failed to create batch for ${type} meters`);
-      }
+        const batchInputs = Object.entries(metersByType).map(
+          ([type, typeMeters]) => {
+            const batchAmount = typeMeters.length;
+            const typeUnitPrice = Number.parseFloat(
+              saleDetails.unitPrices[type]
+            );
+            const totalPrice = typeUnitPrice * batchAmount;
 
-      console.log(`Batch created: ${batchData.id} for ${type}`);
+            return {
+              user_id: currentUser.id,
+              user_name: userName,
+              meter_type: type,
+              batch_amount: batchAmount,
+              unit_price: typeUnitPrice,
+              total_price: totalPrice,
+              destination: saleDetails.destination,
+              recipient: saleDetails.recipient,
+              customer_type: saleDetails.customerType,
+              customer_county: saleDetails.customerCounty,
+              customer_contact: saleDetails.customerContact,
+              sale_date: saleDetails.saleDate,
+              transaction_id: transactionData.id,
+            } satisfies Omit<SaleBatchData, "id">;
+          }
+        );
 
-      // Step 5b: Process individual meters with proper error handling
-      // Process sequentially to ensure atomicity per meter
-      for (const meter of typeMeters) {
-        try {
-          // Step 1: Remove from meters table FIRST
-          await removeMeter(meter.id);
-          console.log(`✓ Removed meter ${meter.serialNumber} from stock`);
+        const batchInsertValues = batchInputs.map(
+          ({ unit_price, total_price, ...rest }) => ({
+            ...rest,
+            unit_price: unit_price.toString(),
+            total_price: total_price.toString(),
+          })
+        );
 
-          // Step 2: Only add to sold_meters if removal was successful
-          await addSoldMeter({
+        const insertedBatches = batchInsertValues.length
+          ? await tx.insert(saleBatches).values(batchInsertValues).returning()
+          : [];
+
+        for (let idx = 0; idx < insertedBatches.length; idx++) {
+          const batch = insertedBatches[idx];
+          const input = batchInputs[idx];
+          notificationPayloads.push({
+            type: "METER_SALE",
+            message: `${input.user_name} sold ${input.batch_amount} ${input.meter_type} meter${
+              input.batch_amount > 1 ? "s" : ""
+            } to ${input.recipient} in ${input.destination}`,
+            metadata: {
+              batchId: batch.id,
+              meterType: input.meter_type,
+              batchAmount: input.batch_amount,
+              destination: input.destination,
+              recipient: input.recipient,
+              totalPrice: input.total_price,
+              unitPrice: input.unit_price,
+              customerType: input.customer_type,
+              customerCounty: input.customer_county,
+              customerContact: input.customer_contact,
+            },
+            createdBy: input.user_id,
+          });
+        }
+
+        const batchIdByType = new Map<string, string>();
+        for (let idx = 0; idx < insertedBatches.length; idx++) {
+          const batch = insertedBatches[idx];
+          batchIdByType.set(batchInputs[idx].meter_type, batch.id);
+        }
+
+        const removedMeters = await tx
+          .delete(metersTable)
+          .where(inArray(metersTable.id, meterIds))
+          .returning({ id: metersTable.id });
+
+        if (removedMeters.length !== meterIds.length) {
+          throw new Error(
+            `Failed to remove all meters from stock. Expected ${meterIds.length}, removed ${removedMeters.length}.`
+          );
+        }
+
+        const soldMeterValues = meters.map((meter) => {
+          const batchId = batchIdByType.get(meter.type);
+          if (!batchId) {
+            throw new Error(
+              `Batch mapping missing for meter type ${meter.type}`
+            );
+          }
+
+          const typeUnitPrice = Number.parseFloat(
+            saleDetails.unitPrices[meter.type]
+          );
+
+          return {
             meter_id: meter.id,
             sold_by: currentUser.id,
             sold_at: saleDetails.saleDate,
             destination: saleDetails.destination,
             recipient: saleDetails.recipient,
-            serial_number: meter.serialNumber,
+            serial_number: meter.serialNumber.trim().toUpperCase(),
             unit_price: typeUnitPrice,
-            batch_id: batchData.id,
+            batch_id: batchId,
             customer_type: saleDetails.customerType,
             customer_county: saleDetails.customerCounty,
             customer_contact: saleDetails.customerContact,
-          });
-          console.log(`✓ Added meter ${meter.serialNumber} to sold_meters`);
-        } catch (error) {
-          // If either step fails, log and re-throw to stop the entire sale
-          console.error(
-            `CRITICAL ERROR processing meter ${meter.serialNumber}:`,
-            error
-          );
-          throw new Error(
-            `Failed to process meter ${meter.serialNumber}: ${error instanceof Error ? error.message : "Unknown error"}. Sale aborted to prevent data corruption.`
-          );
-        }
-      }
+          } satisfies Omit<SoldMeterData, "id">;
+        });
 
-      processedBatches.push({
-        batchId: batchData.id,
-        type,
-        count: batchAmount,
+        if (soldMeterValues.length > 0) {
+          const soldInsertValues = soldMeterValues.map(
+            ({ unit_price, ...rest }) => ({
+              ...rest,
+              unit_price: unit_price.toString(),
+            })
+          );
+
+          await tx.insert(soldMeters).values(soldInsertValues);
+        }
+
+        return {
+          success: true,
+          transactionId: transactionData.id,
+          referenceNumber: transactionData.reference_number,
+          batches: insertedBatches.map((batch, idx) => ({
+            batchId: batch.id,
+            type: batchInputs[idx]?.meter_type ?? "",
+            count: batchInputs[idx]?.batch_amount ?? 0,
+          })),
+        };
       });
 
-      console.log(`Completed processing ${batchAmount} ${type} meters`);
-    }
-
-    // Step 6: Final verification - ensure all meters were properly recorded
-    console.log("Step 6: Verifying all meters were recorded...");
-    for (const batch of processedBatches) {
-      const recordedCount = await db
-        .select({ count: sql<number>`count(*)` })
-        .from(soldMeters)
-        .where(eq(soldMeters.batch_id, batch.batchId));
-
-      const actualCount = Number(recordedCount[0]?.count || 0);
-
-      if (actualCount !== batch.count) {
-        // Critical mismatch detected
-        console.error(
-          `CRITICAL: Batch ${batch.batchId} has mismatch! Expected: ${batch.count}, Got: ${actualCount}`
-        );
-        throw new Error(
-          `Data integrity error: Expected ${batch.count} meters in batch but found ${actualCount}. Sale has been aborted.`
+      if (notificationPayloads.length > 0) {
+        await Promise.all(
+          notificationPayloads.map((payload) =>
+            createNotification(payload).catch((error) => {
+              console.error("Failed to create sale notification:", error);
+            })
+          )
         );
       }
 
-      console.log(
-        `✓ Batch ${batch.batchId} verified: ${actualCount}/${batch.count} meters`
-      );
+      return result;
+    } catch (error) {
+      console.error("Error processing meter sale:", error);
+      throw error;
     }
-
-    console.log("Sale completed successfully!");
-
-    return {
-      success: true,
-      transactionId: transactionData.id,
-      referenceNumber: transactionData.reference_number,
-      batches: processedBatches,
-    };
-  } catch (error) {
-    console.error("Error processing meter sale:", error);
-    // In case of error, the transaction should be rolled back
-    // For now, we'll re-throw the error
-    throw error;
-  }
+  });
 }
 
 /**
@@ -1125,14 +1269,11 @@ export async function processAgentMeterSale({
   meters,
   currentUser,
   userName,
-  agentId,
   saleDetails,
-  removeFromInventory,
 }: {
   meters: Array<{ id: string; serial_number: string; type: string }>;
   currentUser: { id: string };
   userName: string;
-  agentId: string;
   saleDetails: {
     destination: string;
     recipient: string;
@@ -1142,7 +1283,6 @@ export async function processAgentMeterSale({
     customerContact: string;
     saleDate: Date;
   };
-  removeFromInventory: (meterId: string) => Promise<void>;
 }) {
   // Input validation
   if (meters.length === 0) {
@@ -1174,7 +1314,6 @@ export async function processAgentMeterSale({
   }
 
   try {
-    console.log("Step 1: Grouping meters by type...");
     const metersByType = meters.reduce(
       (acc: { [key: string]: typeof meters }, meter) => {
         if (!acc[meter.type]) acc[meter.type] = [];
@@ -1193,7 +1332,6 @@ export async function processAgentMeterSale({
       0
     );
 
-    console.log("Step 2: Creating sales transaction...");
     // Create sales transaction
     const transactionData = await createSalesTransaction({
       user_id: currentUser.id,
@@ -1207,10 +1345,6 @@ export async function processAgentMeterSale({
       total_amount: totalAmount,
     });
 
-    console.log(
-      `Transaction created with ID: ${transactionData.id}, Reference: ${transactionData.reference_number}`
-    );
-
     // Process each meter type as a batch
     const processedBatches: Array<{
       batchId: string;
@@ -1222,10 +1356,6 @@ export async function processAgentMeterSale({
       const batchAmount = typeMeters.length;
       const typeUnitPrice = Number.parseFloat(saleDetails.unitPrices[type]);
       const totalPrice = typeUnitPrice * batchAmount;
-
-      console.log(
-        `Step 3: Creating batch for ${type}: ${batchAmount} meters @ ${typeUnitPrice} each`
-      );
 
       // Create sale batch with transaction_id
       const batchData = await addSaleBatch({
@@ -1248,17 +1378,12 @@ export async function processAgentMeterSale({
         throw new Error(`Failed to create batch for ${type} meters`);
       }
 
-      console.log(`Batch created: ${batchData.id} for ${type}`);
-
       // Process individual meters with proper error handling
       // Process sequentially to ensure atomicity per meter
       for (const meter of typeMeters) {
         try {
           // Step 1: Remove from agent inventory FIRST
-          await removeFromInventory(meter.id);
-          console.log(
-            `✓ Removed meter ${meter.serial_number} from agent inventory`
-          );
+          await removeFromAgentInventory(meter.id);
 
           // Step 2: Only add to sold_meters if removal was successful
           await addSoldMeter({
@@ -1274,7 +1399,6 @@ export async function processAgentMeterSale({
             customer_county: saleDetails.customerCounty,
             customer_contact: saleDetails.customerContact,
           });
-          console.log(`✓ Added meter ${meter.serial_number} to sold_meters`);
         } catch (error) {
           // If either step fails, log and re-throw to stop the entire sale
           console.error(
@@ -1292,12 +1416,9 @@ export async function processAgentMeterSale({
         type,
         count: batchAmount,
       });
-
-      console.log(`Completed processing ${batchAmount} ${type} meters`);
     }
 
     // Final verification - ensure all meters were properly recorded
-    console.log("Step 4: Verifying all meters were recorded...");
     for (const batch of processedBatches) {
       const recordedCount = await db
         .select({ count: sql<number>`count(*)` })
@@ -1314,13 +1435,7 @@ export async function processAgentMeterSale({
           `Data integrity error: Expected ${batch.count} meters in batch but found ${actualCount}. Sale has been aborted.`
         );
       }
-
-      console.log(
-        `✓ Batch ${batch.batchId} verified: ${actualCount}/${batch.count} meters`
-      );
     }
-
-    console.log("Agent sale completed successfully!");
 
     return {
       success: true,

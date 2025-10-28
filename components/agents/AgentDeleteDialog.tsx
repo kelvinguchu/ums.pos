@@ -111,8 +111,8 @@ export default function AgentDeleteDialog({
                   }}
                   className={
                     isMobile
-                      ? "bg-[#000080] hover:bg-[#000066] flex-1 sm:flex-none"
-                      : "bg-[#000080] hover:bg-[#000066]"
+                      ? "bg-primary hover:bg-[#000066] flex-1 sm:flex-none"
+                      : "bg-primary hover:bg-[#000066]"
                   }>
                   Scan To Delete
                 </Button>

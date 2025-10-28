@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useTransition } from "react";
 import {
   SidebarGroup,
   SidebarGroupContent,
@@ -8,9 +9,16 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
-import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { usePagePrefetch } from "@/hooks/use-page-prefetch";
+import { Loader2 } from "lucide-react";
+import { useRouter } from "next/navigation";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface NavigationItem {
   title: string;
@@ -25,8 +33,30 @@ interface NavigationMenuProps {
   currentPath: string;
 }
 
-export function NavigationMenu({ items, currentPath }: NavigationMenuProps) {
+export function NavigationMenu({
+  items,
+  currentPath,
+}: Readonly<NavigationMenuProps>) {
   const { prefetchPage } = usePagePrefetch();
+  const router = useRouter();
+  const [isPending, startTransition] = useTransition();
+  const [clickedUrl, setClickedUrl] = useState<string | null>(null);
+
+  const handleNavigation = (url: string) => {
+    // Don't navigate if already on this page
+    if (currentPath === url) return;
+
+    // Set the clicked URL for loading state
+    setClickedUrl(url);
+
+    // Dispatch custom event for global loading indicator
+    globalThis.window.dispatchEvent(new CustomEvent("navigation-start"));
+
+    // Use startTransition for non-blocking navigation
+    startTransition(() => {
+      router.push(url);
+    });
+  };
 
   return (
     <SidebarGroup>
@@ -35,26 +65,45 @@ export function NavigationMenu({ items, currentPath }: NavigationMenuProps) {
       </SidebarGroupLabel>
       <SidebarGroupContent className='mt-2 space-y-1'>
         <SidebarMenu>
-          {items.map((item) => (
-            <SidebarMenuItem key={item.title}>
-              <SidebarMenuButton
-                asChild
-                isActive={currentPath === item.url}
-                className={cn(
-                  "w-full px-2 py-2.5 text-sm font-medium transition-colors",
-                  "hover:bg-gray-50 hover:text-[#000080]",
-                  "focus:bg-gray-50 focus:text-[#000080] focus:outline-none",
-                  currentPath === item.url &&
-                    "bg-[#000080]/5 text-[#000080] font-semibold"
-                )}
-                onMouseEnter={() => prefetchPage(item.url)}>
-                <Link href={item.url} className='flex items-center'>
-                  <item.icon className='mr-3 h-4 w-4' />
-                  <span>{item.title}</span>
-                </Link>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-          ))}
+          <TooltipProvider delayDuration={0}>
+            {items.map((item) => {
+              const isNavigating = clickedUrl === item.url && isPending;
+              const isActive = currentPath === item.url;
+
+              return (
+                <SidebarMenuItem key={item.title}>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <SidebarMenuButton
+                        isActive={isActive}
+                        className={cn(
+                          "w-full px-2 py-2.5 cursor-pointer text-sm font-medium transition-all duration-150",
+                          "hover:bg-gray-50 hover:text-primary",
+                          "focus:bg-gray-50 focus:text-primary focus:outline-none",
+                          isActive && "bg-primary text-white font-semibold shadow-sm border-l-4 border-primary",
+                          isNavigating &&
+                            "bg-primary/10 text-primary opacity-70 cursor-wait"
+                        )}
+                        onMouseEnter={() => prefetchPage(item.url)}
+                        onClick={() => handleNavigation(item.url)}>
+                        {isNavigating ? (
+                          <Loader2 className='h-4 w-4 animate-spin' />
+                        ) : (
+                          <item.icon className='h-4 w-4' />
+                        )}
+                        <span>{item.title}</span>
+                      </SidebarMenuButton>
+                    </TooltipTrigger>
+                    <TooltipContent
+                      side='right'
+                      className='flex items-center gap-4'>
+                      {item.title}
+                    </TooltipContent>
+                  </Tooltip>
+                </SidebarMenuItem>
+              );
+            })}
+          </TooltipProvider>
         </SidebarMenu>
       </SidebarGroupContent>
     </SidebarGroup>

@@ -45,7 +45,7 @@ export default function AgentTableRow({
       <TableCell className='font-medium'>{agent.name}</TableCell>
       <TableCell>
         <div className='flex items-center gap-2'>
-          <PhoneCall className='h-4 w-4 text-[#000080]' />
+          <PhoneCall className='h-4 w-4 text-primary' />
           {agent.phone_number}
         </div>
       </TableCell>
@@ -58,6 +58,11 @@ export default function AgentTableRow({
       <TableCell>
         <Badge variant='outline' className='bg-gray-100 text-gray-800'>
           {agent.county}
+        </Badge>
+      </TableCell>
+      <TableCell className='text-center'>
+        <Badge variant='outline' className='bg-blue-100 text-blue-800'>
+          {agent.total_meters ?? 0}
         </Badge>
       </TableCell>
       <TableCell>

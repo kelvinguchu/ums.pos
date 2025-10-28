@@ -35,10 +35,11 @@ const getIconColorClass = (title: string): string => {
 
 // Helper function for sheet className
 const getSheetClassName = (title: string): string => {
-  if (title === "Sell Meters") return "w-full min-w-[50vw] overflow-y-auto p-0 bg-gray-50 border-l border-gray-200 px-2";
+  if (title === "Sell Meters")
+    return "w-full min-w-[50vw] max-h-[100vh] p-0 bg-gray-50 border-l border-gray-200 px-2 flex flex-col overflow-hidden";
   if (title === "Add Meters")
-    return "min-w-[60vw] max-h-[100vh] overflow-y-auto bg-gray-50 border-l border-gray-200 px-2";
-  return "min-w-[70vw] max-h-[100vh] overflow-y-auto bg-gray-50 border-l border-gray-200 px-2";
+    return "min-w-[60vw] max-h-[100vh] bg-gray-50 border-l border-gray-200 p-6 flex flex-col overflow-hidden";
+  return "min-w-[70vw] max-h-[100vh] bg-gray-50 border-l border-gray-200 px-2 flex flex-col overflow-hidden";
 };
 
 // Helper function to render sheet content
@@ -49,13 +50,7 @@ const renderSheetContent = (
   currentUserData: { id: string; name: string }
 ) => {
   if (title === "Sell Meters") {
-    return (
-      <div className='h-full flex flex-col'>
-        <div className='flex-1 overflow-y-auto'>
-          <Component currentUser={user} />
-        </div>
-      </div>
-    );
+    return <Component currentUser={user} />;
   }
 
   if (title === "Return Sold Meters") {
@@ -110,9 +105,9 @@ export function ActionItem({
   user,
   currentUserData,
   onOpenChange,
-}: ActionItemProps) {
+}: Readonly<ActionItemProps>) {
   const TriggerButton = (
-    <SidebarMenuButton className='w-full px-2 py-2.5 text-sm font-medium transition-colors hover:bg-gray-50 group'>
+    <SidebarMenuButton className='w-full px-2 py-2.5 text-sm font-medium transition-colors hover:bg-gray-50 group cursor-pointer'>
       <Icon className={`mr-3 h-4 w-4 ${getIconColorClass(title)}`} />
       <span>{title}</span>
     </SidebarMenuButton>
@@ -123,7 +118,7 @@ export function ActionItem({
       <SidebarMenuItem>
         <Dialog open={isOpen} onOpenChange={onOpenChange}>
           <DialogTrigger asChild>{TriggerButton}</DialogTrigger>
-          <DialogContent>
+          <DialogContent className='bg-gray-50 border-gray-200 px-2'>
             <Component
               onClose={() => onOpenChange(false)}
               onAgentCreated={() => onOpenChange(false)}

@@ -7,8 +7,13 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import React, { useState } from "react";
-import { SheetHeader, SheetTitle } from "@/components/ui/sheet";
-import { AlertTriangle, AlertCircle, RefreshCw, X, Loader2 } from "lucide-react";
+import {
+  AlertTriangle,
+  AlertCircle,
+  RefreshCw,
+  X,
+  Loader2,
+} from "lucide-react";
 import { getFaultyMeters } from "@/lib/actions/reports";
 import { EmptyState } from "./EmptyState";
 import { useQuery } from "@tanstack/react-query";
@@ -70,6 +75,7 @@ export default function FaultyMetersView() {
   const {
     data: faultyMeters,
     isLoading,
+    isFetching,
     error,
     refetch,
   } = useQuery<FaultyMeter[]>({
@@ -81,13 +87,15 @@ export default function FaultyMetersView() {
 
   const handleRefresh = async () => {
     try {
-      await refetch();
+      await refetch({ throwOnError: true });
       toast.success("Faulty meters data refreshed");
     } catch (err) {
       console.error("Failed to refresh data:", err);
       toast.error("Failed to refresh data");
     }
   };
+
+  const isRefreshing = isFetching && !isLoading;
 
   const filteredMeters = faultyMeters?.filter((meter) => {
     const matchesSearch =
@@ -136,7 +144,7 @@ export default function FaultyMetersView() {
         user.name || user.email || "System User"
       );
 
-      await refetch(); // Refresh the data
+      await refetch({ throwOnError: true }); // Refresh the data
 
       toast.success(
         newStatus === "repaired"
@@ -179,249 +187,267 @@ export default function FaultyMetersView() {
   const currentMeters = filteredMeters?.slice(startIndex, endIndex);
 
   return (
-    <div className='space-y-4'>
-      <SheetHeader>
-        <div className='flex justify-between items-center'>
-          <SheetTitle className='flex items-center gap-2'>
+    <div className='flex flex-col h-full overflow-hidden'>
+      <div className='flex-none bg-gray-50 pb-4 pt-2 px-6 border-b border-gray-200'>
+        <div className='flex justify-between items-center mb-4 pr-12'>
+          <h2 className='flex items-center gap-2 text-2xl font-bold'>
             <AlertTriangle className='h-5 w-5 text-yellow-500' />
             Faulty Meters
-          </SheetTitle>
+          </h2>
           <Button
             variant='outline'
             size='icon'
             onClick={handleRefresh}
-            className='hover:bg-gray-100 mr-4'>
-            <RefreshCw className='h-4 w-4' />
+            disabled={isLoading || isRefreshing || isUpdating}
+            aria-label='Refresh faulty meters data'
+            className='hover:bg-gray-100'>
+            <RefreshCw
+              className={cn(
+                "h-4 w-4 transition-transform",
+                (isLoading || isRefreshing) && "animate-spin"
+              )}
+            />
           </Button>
         </div>
-      </SheetHeader>
+      </div>
 
-      {isLoading ? (
-        <div className='flex justify-center items-center min-h-[200px]'>
-          <div>
-            <Loader2 className='h-3 w-3 animate-spin' />
-          </div>
-        </div>
-      ) : (
-        <>
-          {/* Filters */}
-          <div className='bg-white p-4 rounded-lg border shadow-sm'>
-            <div className='flex flex-wrap items-center gap-3'>
-              <Input
-                type='text'
-                placeholder='Search by serial, description, or staff...'
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className='w-[300px]'
-              />
-              <Select value={selectedStatus} onValueChange={setSelectedStatus}>
-                <SelectTrigger className='w-[140px]'>
-                  <SelectValue>Status</SelectValue>
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value='all'>All Status</SelectItem>
-                  <SelectItem value='pending'>Pending</SelectItem>
-                  <SelectItem value='repaired'>Repaired</SelectItem>
-                  <SelectItem value='unrepairable'>Unrepairable</SelectItem>
-                </SelectContent>
-              </Select>
-
-              <div className='w-[130px]'>
-                <DatePicker value={selectedDate} onChange={setSelectedDate} />
-              </div>
-
-              {hasActiveFilters() && (
-                <Button
-                  variant='ghost'
-                  size='icon'
-                  onClick={clearFilters}
-                  className='text-muted-foreground hover:text-foreground'>
-                  <X className='h-4 w-4' />
-                </Button>
-              )}
+      <div className='flex-1 overflow-y-auto px-6 py-4 space-y-4'>
+        {isLoading ? (
+          <div className='flex justify-center items-center min-h-[200px]'>
+            <div>
+              <Loader2 className='h-3 w-3 animate-spin' />
             </div>
           </div>
+        ) : (
+          <>
+            {/* Filters */}
+            <div className='bg-white p-4 rounded-lg border shadow-sm'>
+              <div className='flex flex-wrap items-center gap-3'>
+                <Input
+                  type='text'
+                  placeholder='Search by serial, description, or staff...'
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className='w-[300px]'
+                />
+                <Select
+                  value={selectedStatus}
+                  onValueChange={setSelectedStatus}>
+                  <SelectTrigger className='w-[140px]'>
+                    <SelectValue>Status</SelectValue>
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value='all'>All Status</SelectItem>
+                    <SelectItem value='pending'>Pending</SelectItem>
+                    <SelectItem value='repaired'>Repaired</SelectItem>
+                    <SelectItem value='unrepairable'>Unrepairable</SelectItem>
+                  </SelectContent>
+                </Select>
 
-          {filteredMeters && filteredMeters.length > 0 ? (
-            <div className='space-y-4'>
-              <div className='overflow-x-auto'>
-                <Table>
-                  <TableHeader>
-                    <TableRow className='bg-gray-50'>
-                      <TableHead>Serial Number</TableHead>
-                      <TableHead>Type</TableHead>
-                      <TableHead>Returned By</TableHead>
-                      <TableHead>Return Date</TableHead>
-                      <TableHead>Fault Description</TableHead>
-                      <TableHead>Status</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {(currentMeters || []).map((meter) => (
-                      <TableRow key={meter.id}>
-                        <TableCell className='font-mono'>
-                          {meter.serial_number}
-                        </TableCell>
-                        <TableCell className='capitalize'>
-                          {meter.type}
-                        </TableCell>
-                        <TableCell>{meter.returner_name}</TableCell>
-                        <TableCell>
-                          {meter.returned_at
-                            ? meter.returned_at.toLocaleDateString()
-                            : "-"}
-                        </TableCell>
-                        <TableCell>{meter.fault_description || "-"}</TableCell>
-                        <TableCell>
-                          <Dialog>
-                            <DialogTrigger asChild>
-                              <Button
-                                variant='outline'
-                                className='w-full justify-start'
-                                disabled={isUpdating}>
-                                <span
-                                  className={cn(
-                                    "capitalize",
-                                    meter.status === "pending" &&
-                                      "text-yellow-600",
-                                    meter.status === "repaired" &&
-                                      "text-green-600",
-                                    meter.status === "unrepairable" &&
-                                      "text-red-600"
-                                  )}>
-                                  {meter.status || "Unknown"}
-                                </span>
-                              </Button>
-                            </DialogTrigger>
-                            <DialogContent className='bg-gray-50 border-gray-200 px-2'>
-                              <DialogHeader>
-                                <DialogTitle>Update Meter Status</DialogTitle>
-                                <DialogDescription>
-                                  Select the new status for meter{" "}
-                                  {meter.serial_number}
-                                </DialogDescription>
-                              </DialogHeader>
-                              <div className='grid gap-3 py-4'>
-                                <Button
-                                  variant='outline'
-                                  className='justify-start'
-                                  onClick={() =>
-                                    handleStatusUpdate(meter, "repaired")
-                                  }
-                                  disabled={
-                                    meter.status === "repaired" || isUpdating
-                                  }>
-                                  <span className='text-green-600'>
-                                    Repaired
-                                  </span>
-                                  {meter.status === "repaired" && " (Current)"}
-                                </Button>
-                                <Button
-                                  variant='outline'
-                                  className='justify-start'
-                                  onClick={() =>
-                                    handleStatusUpdate(meter, "unrepairable")
-                                  }
-                                  disabled={
-                                    meter.status === "unrepairable" ||
-                                    isUpdating
-                                  }>
-                                  <span className='text-red-600'>
-                                    Unrepairable
-                                  </span>
-                                  {meter.status === "unrepairable" &&
-                                    " (Current)"}
-                                </Button>
-                                <Button
-                                  variant='outline'
-                                  className='justify-start'
-                                  onClick={() =>
-                                    handleStatusUpdate(meter, "pending")
-                                  }
-                                  disabled={
-                                    meter.status === "pending" || isUpdating
-                                  }>
-                                  <span className='text-yellow-600'>
-                                    Pending
-                                  </span>
-                                  {meter.status === "pending" && " (Current)"}
-                                </Button>
-                              </div>
-                            </DialogContent>
-                          </Dialog>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
-
-              {/* Pagination */}
-              {totalPages > 1 && (
-                <div className='mt-4'>
-                  <Pagination>
-                    <PaginationContent>
-                      <PaginationItem>
-                        <PaginationPrevious
-                          onClick={() =>
-                            setCurrentPage((page) => Math.max(1, page - 1))
-                          }
-                          className={
-                            currentPage === 1
-                              ? "pointer-events-none opacity-50"
-                              : ""
-                          }
-                        />
-                      </PaginationItem>
-
-                      {Array.from({ length: totalPages }, (_, i) => i + 1)
-                        .filter(
-                          (page) =>
-                            page === 1 ||
-                            page === totalPages ||
-                            (page >= currentPage - 1 && page <= currentPage + 1)
-                        )
-                        .map((page, i, arr) => (
-                          <React.Fragment key={page}>
-                            {i > 0 && arr[i - 1] !== page - 1 && (
-                              <PaginationItem>
-                                <PaginationEllipsis />
-                              </PaginationItem>
-                            )}
-                            <PaginationItem>
-                              <PaginationLink
-                                onClick={() => setCurrentPage(page)}
-                                isActive={currentPage === page}>
-                                {page}
-                              </PaginationLink>
-                            </PaginationItem>
-                          </React.Fragment>
-                        ))}
-
-                      <PaginationItem>
-                        <PaginationNext
-                          onClick={() =>
-                            setCurrentPage((page) =>
-                              Math.min(totalPages, page + 1)
-                            )
-                          }
-                          className={
-                            currentPage === totalPages
-                              ? "pointer-events-none opacity-50"
-                              : ""
-                          }
-                        />
-                      </PaginationItem>
-                    </PaginationContent>
-                  </Pagination>
+                <div className='w-[130px]'>
+                  <DatePicker value={selectedDate} onChange={setSelectedDate} />
                 </div>
-              )}
+
+                {hasActiveFilters() && (
+                  <Button
+                    variant='ghost'
+                    size='icon'
+                    onClick={clearFilters}
+                    className='text-muted-foreground hover:text-foreground'>
+                    <X className='h-4 w-4' />
+                  </Button>
+                )}
+              </div>
             </div>
-          ) : (
-            <EmptyState icon={AlertTriangle} message='No faulty meters found' />
-          )}
-        </>
-      )}
+
+            {filteredMeters && filteredMeters.length > 0 ? (
+              <div className='space-y-4'>
+                <div className='overflow-x-auto'>
+                  <Table>
+                    <TableHeader>
+                      <TableRow className='bg-gray-50'>
+                        <TableHead>Serial Number</TableHead>
+                        <TableHead>Type</TableHead>
+                        <TableHead>Returned By</TableHead>
+                        <TableHead>Return Date</TableHead>
+                        <TableHead>Fault Description</TableHead>
+                        <TableHead>Status</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {(currentMeters || []).map((meter) => (
+                        <TableRow key={meter.id}>
+                          <TableCell className='font-mono'>
+                            {meter.serial_number}
+                          </TableCell>
+                          <TableCell className='capitalize'>
+                            {meter.type}
+                          </TableCell>
+                          <TableCell>{meter.returner_name}</TableCell>
+                          <TableCell>
+                            {meter.returned_at
+                              ? meter.returned_at.toLocaleDateString()
+                              : "-"}
+                          </TableCell>
+                          <TableCell>
+                            {meter.fault_description || "-"}
+                          </TableCell>
+                          <TableCell>
+                            <Dialog>
+                              <DialogTrigger asChild>
+                                <Button
+                                  variant='outline'
+                                  className='w-full justify-start'
+                                  disabled={isUpdating}>
+                                  <span
+                                    className={cn(
+                                      "capitalize",
+                                      meter.status === "pending" &&
+                                        "text-yellow-600",
+                                      meter.status === "repaired" &&
+                                        "text-green-600",
+                                      meter.status === "unrepairable" &&
+                                        "text-red-600"
+                                    )}>
+                                    {meter.status || "Unknown"}
+                                  </span>
+                                </Button>
+                              </DialogTrigger>
+                              <DialogContent className='bg-gray-50 border-gray-200 px-2'>
+                                <DialogHeader>
+                                  <DialogTitle>Update Meter Status</DialogTitle>
+                                  <DialogDescription>
+                                    Select the new status for meter{" "}
+                                    {meter.serial_number}
+                                  </DialogDescription>
+                                </DialogHeader>
+                                <div className='grid gap-3 py-4'>
+                                  <Button
+                                    variant='outline'
+                                    className='justify-start'
+                                    onClick={() =>
+                                      handleStatusUpdate(meter, "repaired")
+                                    }
+                                    disabled={
+                                      meter.status === "repaired" || isUpdating
+                                    }>
+                                    <span className='text-green-600'>
+                                      Repaired
+                                    </span>
+                                    {meter.status === "repaired" &&
+                                      " (Current)"}
+                                  </Button>
+                                  <Button
+                                    variant='outline'
+                                    className='justify-start'
+                                    onClick={() =>
+                                      handleStatusUpdate(meter, "unrepairable")
+                                    }
+                                    disabled={
+                                      meter.status === "unrepairable" ||
+                                      isUpdating
+                                    }>
+                                    <span className='text-red-600'>
+                                      Unrepairable
+                                    </span>
+                                    {meter.status === "unrepairable" &&
+                                      " (Current)"}
+                                  </Button>
+                                  <Button
+                                    variant='outline'
+                                    className='justify-start'
+                                    onClick={() =>
+                                      handleStatusUpdate(meter, "pending")
+                                    }
+                                    disabled={
+                                      meter.status === "pending" || isUpdating
+                                    }>
+                                    <span className='text-yellow-600'>
+                                      Pending
+                                    </span>
+                                    {meter.status === "pending" && " (Current)"}
+                                  </Button>
+                                </div>
+                              </DialogContent>
+                            </Dialog>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+
+                {/* Pagination */}
+                {totalPages > 1 && (
+                  <div className='mt-4'>
+                    <Pagination>
+                      <PaginationContent>
+                        <PaginationItem>
+                          <PaginationPrevious
+                            onClick={() =>
+                              setCurrentPage((page) => Math.max(1, page - 1))
+                            }
+                            className={
+                              currentPage === 1
+                                ? "pointer-events-none opacity-50"
+                                : ""
+                            }
+                          />
+                        </PaginationItem>
+
+                        {Array.from({ length: totalPages }, (_, i) => i + 1)
+                          .filter(
+                            (page) =>
+                              page === 1 ||
+                              page === totalPages ||
+                              (page >= currentPage - 1 &&
+                                page <= currentPage + 1)
+                          )
+                          .map((page, i, arr) => (
+                            <React.Fragment key={page}>
+                              {i > 0 && arr[i - 1] !== page - 1 && (
+                                <PaginationItem>
+                                  <PaginationEllipsis />
+                                </PaginationItem>
+                              )}
+                              <PaginationItem>
+                                <PaginationLink
+                                  onClick={() => setCurrentPage(page)}
+                                  isActive={currentPage === page}>
+                                  {page}
+                                </PaginationLink>
+                              </PaginationItem>
+                            </React.Fragment>
+                          ))}
+
+                        <PaginationItem>
+                          <PaginationNext
+                            onClick={() =>
+                              setCurrentPage((page) =>
+                                Math.min(totalPages, page + 1)
+                              )
+                            }
+                            className={
+                              currentPage === totalPages
+                                ? "pointer-events-none opacity-50"
+                                : ""
+                            }
+                          />
+                        </PaginationItem>
+                      </PaginationContent>
+                    </Pagination>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <EmptyState
+                icon={AlertTriangle}
+                message='No faulty meters found'
+              />
+            )}
+          </>
+        )}
+      </div>
     </div>
   );
 }

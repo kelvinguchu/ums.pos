@@ -17,6 +17,7 @@ import {
 import { useMeterSubmission } from "./hooks/useMeterSubmission";
 import { useReceiptDownload } from "./hooks/useReceiptDownload";
 import { X } from "lucide-react";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface AddMeterFormProps {
   readonly currentUser: {
@@ -65,10 +66,15 @@ export default function AddMeterForm({ currentUser }: AddMeterFormProps) {
     getSubmittedData,
   } = useMeterCache();
 
-  const { isChecking, exists, errorMessage, setValidationResult } =
-    useMeterValidation(serialNumber, meters, (message) =>
-      toast(message as any)
-    );
+  const validationToast = useCallback(
+    (message: { title: string; description: string; variant?: string }) => {
+      toast(message as any);
+    },
+    []
+  );
+
+  const { isChecking, exists, errorMessage, setValidationResult, lastCheck } =
+    useMeterValidation(serialNumber, meters, validationToast);
 
   const { isSubmitting, submitMeters } = useMeterSubmission();
   const { downloadReceipt } = useReceiptDownload();
@@ -104,7 +110,11 @@ export default function AddMeterForm({ currentUser }: AddMeterFormProps) {
 
     setIsProcessing(true);
     try {
-      const validation = await validateMeterBeforeAdd(serialNumber, meters);
+      const validation = await validateMeterBeforeAdd(
+        serialNumber,
+        meters,
+        lastCheck ?? undefined
+      );
 
       if (!validation.isValid) {
         toast.error(validation.error || "Invalid meter");
@@ -167,7 +177,9 @@ export default function AddMeterForm({ currentUser }: AddMeterFormProps) {
 
     await submitMeters(meters, batchDetails!, adderName, currentUser.id, {
       onSuccess: () => {
-        toast.success("Meters added successfully! You can now download the receipt.");
+        toast.success(
+          "Meters added successfully! You can now download the receipt."
+        );
         clearCache();
         setSerialNumber("");
         clearMetersCache();
@@ -214,25 +226,36 @@ export default function AddMeterForm({ currentUser }: AddMeterFormProps) {
     toast.success("Form cleared successfully");
   }, [meters.length, clearCache, clearSubmittedCache]);
 
-  const handleExistsChange = (exists: boolean, message?: string) => {
-    // This is needed for MeterInputForm compatibility
-    // The validation is now handled by useMeterValidation hook
-  };
+  const handleSerialNumberChange = useCallback(
+    (value: string) => {
+      if (value.length > MAX_SERIAL_LENGTH) {
+        toast.error("Serial number cannot be more than 12 digits");
+        return;
+      }
+      setSerialNumber(value);
+    },
+    [setSerialNumber]
+  );
+
+  const handleMetersAdd = useCallback(
+    (newMeters: Meter[]) => {
+      setMeters((prev) => [...newMeters, ...prev]);
+    },
+    [setMeters]
+  );
 
   return (
-    <div className='bg-white shadow-md rounded-lg p-2 sm:p-6 max-w-[100%] mx-auto'>
-      <div className='flex flex-col max-h-[100vh]'>
-        <div className='flex-1'>
-          <div className='flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-2 sm:gap-0'>
+    <div className='flex h-full flex-col pr-4'>
+      <ScrollArea className='flex-1'>
+        <div className='space-y-6'>
+          <div className='flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 sm:gap-0'>
             <h2 className='text-xl sm:text-2xl font-bold text-gray-800'>
               Add Meters
             </h2>
             <FormActions
               currentUser={currentUser}
               currentMeters={meters}
-              onMetersAdd={(newMeters) =>
-                setMeters((prev) => [...newMeters, ...prev])
-              }
+              onMetersAdd={handleMetersAdd}
               onClear={handleClearForm}
             />
           </div>
@@ -240,19 +263,12 @@ export default function AddMeterForm({ currentUser }: AddMeterFormProps) {
           <MeterInputForm
             serialNumber={serialNumber}
             selectedType={selectedType}
-            onSerialNumberChange={(value) => {
-              if (value.length > MAX_SERIAL_LENGTH) {
-                toast.error("Serial number cannot be more than 12 digits");
-                return;
-              }
-              setSerialNumber(value);
-            }}
+            onSerialNumberChange={handleSerialNumberChange}
             onTypeChange={setSelectedType}
             onAddMeter={handleAddMeter}
             isChecking={isChecking}
             exists={exists}
             errorMessage={errorMessage}
-            onExistsChange={handleExistsChange}
           />
 
           {meters.length > 0 && (
@@ -273,21 +289,21 @@ export default function AddMeterForm({ currentUser }: AddMeterFormProps) {
             <div className='mt-6 relative'>
               <Button
                 onClick={handleDownloadReceipt}
-                className='w-full bg-[#2ECC40] hover:bg-[#28a035] text-white'>
+                className='w-full bg-[#2ECC40] hover:bg-[#28a035] cursor-pointer text-white'>
                 Download Receipt
               </Button>
               <Button
                 onClick={() => clearSubmittedCache()}
                 variant='ghost'
                 size='icon'
-                className='absolute -right-2 -top-2 h-6 w-6 rounded-full bg-gray-200 hover:bg-gray-300'
+                className='absolute -right-2 -top-2 h-6 w-6 cursor-pointer rounded-full bg-gray-200 hover:bg-gray-300'
                 aria-label='Dismiss'>
                 <X className='h-4 w-4' />
               </Button>
             </div>
           )}
         </div>
-      </div>
+      </ScrollArea>
     </div>
   );
 }

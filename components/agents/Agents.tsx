@@ -29,7 +29,8 @@ import EditAgentDialog from "./EditAgentDialog";
 import { cn } from "@/lib/utils";
 import { useQueryClient } from "@tanstack/react-query";
 import { useAgentsData } from "./hooks/useAgentsData";
-import { Loader2, Users2 } from "lucide-react";
+import { Users2 } from "lucide-react";
+import Loader from "@/components/ui/Loader";
 import AgentHistory from "./AgentHistory";
 import AgentsSearchBar from "./AgentsSearchBar";
 import AgentTableRow from "./AgentTableRow";
@@ -41,8 +42,8 @@ const EmptyState = () => (
     <div className='relative'>
       <Users2 className='w-12 h-12 mb-4 text-gray-400' />
       <span className='absolute -bottom-1 -right-1 flex h-3 w-3'>
-        <span className='animate-ping absolute inline-flex h-full w-full rounded-full bg-[#000080] opacity-75'></span>
-        <span className='relative inline-flex rounded-full h-3 w-3 bg-[#000080]'></span>
+        <span className='animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75'></span>
+        <span className='relative inline-flex rounded-full h-3 w-3 bg-primary'></span>
       </span>
     </div>
     <p className='text-sm font-medium'>No agents registered yet</p>
@@ -84,6 +85,7 @@ export default function Agents() {
   const {
     agentsData: { agents, currentUser },
     isLoading,
+    isFetching,
     isError,
     error,
     refetch,
@@ -199,7 +201,11 @@ export default function Agents() {
 
   const handleRefresh = async () => {
     try {
-      await refetch();
+      await queryClient.invalidateQueries({
+        queryKey: ["agents"],
+        refetchType: "active",
+      });
+      await refetch({ cancelRefetch: false, throwOnError: true });
       toast.success("Agents list refreshed");
     } catch (error) {
       console.error("Error refreshing agents data:", error);
@@ -207,10 +213,12 @@ export default function Agents() {
     }
   };
 
+  const isRefreshing = isFetching && !isLoading;
+
   if (isLoading) {
     return (
-      <div className='flex items-center justify-center h-64'>
-        <Loader2 className='w-6 h-6 animate-spin' />
+      <div className='relative flex items-center justify-center h-64'>
+        <Loader />
       </div>
     );
   }
@@ -224,8 +232,12 @@ export default function Agents() {
       <div className='rounded-md border p-4 md:p-6'>
         <Tabs defaultValue='agents' className='w-full'>
           <TabsList className='mb-4'>
-            <TabsTrigger value='agents'>Agents</TabsTrigger>
-            <TabsTrigger value='history'>History</TabsTrigger>
+            <TabsTrigger className='cursor-pointer' value='agents'>
+              Agents
+            </TabsTrigger>
+            <TabsTrigger className='cursor-pointer' value='history'>
+              History
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value='agents' className='space-y-4'>
@@ -234,6 +246,7 @@ export default function Agents() {
               totalAgents={totalAgents}
               onSearchChange={handleSearchChange}
               onRefresh={handleRefresh}
+              isRefreshing={isRefreshing}
             />
 
             {/* Desktop View */}
@@ -245,6 +258,9 @@ export default function Agents() {
                     <TableHead className='font-semibold'>Contact</TableHead>
                     <TableHead className='font-semibold'>Location</TableHead>
                     <TableHead className='font-semibold'>County</TableHead>
+                    <TableHead className='font-semibold text-center'>
+                      Meters
+                    </TableHead>
                     <TableHead className='font-semibold'>Status</TableHead>
                     <TableHead className='font-semibold'>Actions</TableHead>
                   </TableRow>
@@ -264,7 +280,7 @@ export default function Agents() {
                     ))
                   ) : (
                     <TableRow>
-                      <TableCell colSpan={6}>
+                      <TableCell colSpan={7}>
                         <EmptyState />
                       </TableCell>
                     </TableRow>

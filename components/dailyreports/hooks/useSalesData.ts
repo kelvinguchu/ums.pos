@@ -1,9 +1,6 @@
 import { useMemo } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { getSaleBatches } from "@/lib/actions/sales";
-import { getRemainingMetersByType } from "@/lib/actions/reports";
+import { useRemainingMetersByType, useTodaySales } from "./useReportsData";
 import type { SaleBatch, RemainingMetersByType } from "../types";
-import { startOfDay, endOfDay } from "date-fns";
 
 interface SalesData {
   todaySales: SaleBatch[];
@@ -12,45 +9,17 @@ interface SalesData {
   remainingMetersByType: RemainingMetersByType[];
 }
 
-const GC_TIME = 1000 * 60 * 5; // 5 minutes
-const STALE_TIME = 1000 * 30; // 30 seconds
-
 export function useSalesData() {
-  // Note: Real-time subscriptions removed during migration to Drizzle ORM
-  // Consider implementing polling or server-sent events for real-time updates in the future
+  // Use shared hook for today's sales - direct fetch, no filtering needed
+  const todaySalesQuery = useTodaySales();
 
-  // Fetch sales data with caching
-  const salesQuery = useQuery({
-    queryKey: ["sales"],
-    queryFn: () => getSaleBatches(1, 1000), // Fetch first 1000 records for dashboard
-    gcTime: GC_TIME,
-    staleTime: STALE_TIME,
-  });
-
-  // Fetch remaining meters with caching
-  const remainingMetersQuery = useQuery({
-    queryKey: ["remainingMeters"],
-    queryFn: getRemainingMetersByType,
-    gcTime: GC_TIME,
-    staleTime: STALE_TIME,
-  });
+  // Use shared hook for remaining meters - avoids duplicate fetches
+  const remainingMetersQuery = useRemainingMetersByType();
 
   // Combine and transform the data
   const salesData: SalesData = useMemo(() => {
-    const salesResponse = salesQuery.data;
-    const sales = salesResponse?.batches || [];
+    const todaySales = todaySalesQuery.data || [];
     const remainingMeters = remainingMetersQuery.data || [];
-
-    // Filter for today's sales
-    const today = new Date();
-    const todayStart = startOfDay(today);
-    const todayEnd = endOfDay(today);
-
-    const todaySales = sales.filter((sale) => {
-      if (!sale.sale_date) return false;
-      const saleDate = new Date(sale.sale_date);
-      return saleDate >= todayStart && saleDate <= todayEnd;
-    });
 
     return {
       todaySales,
@@ -61,16 +30,24 @@ export function useSalesData() {
       ),
       remainingMetersByType: remainingMeters,
     };
-  }, [salesQuery.data, remainingMetersQuery.data]);
+  }, [todaySalesQuery.data, remainingMetersQuery.data]);
 
   return {
     salesData,
-    isLoading: salesQuery.isLoading || remainingMetersQuery.isLoading,
-    isError: salesQuery.isError || remainingMetersQuery.isError,
-    error: salesQuery.error || remainingMetersQuery.error,
-    refetch: () => {
-      salesQuery.refetch();
-      remainingMetersQuery.refetch();
+    isLoading: todaySalesQuery.isLoading || remainingMetersQuery.isLoading,
+    isFetching: todaySalesQuery.isFetching || remainingMetersQuery.isFetching,
+    isError: todaySalesQuery.isError || remainingMetersQuery.isError,
+    error: todaySalesQuery.error || remainingMetersQuery.error,
+    refetch: async (options?: { throwOnError?: boolean }) => {
+      const refetchOptions = {
+        cancelRefetch: false,
+        throwOnError: options?.throwOnError ?? false,
+      } as const;
+
+      await Promise.all([
+        todaySalesQuery.refetch(refetchOptions),
+        remainingMetersQuery.refetch(refetchOptions),
+      ]);
     },
   };
 }

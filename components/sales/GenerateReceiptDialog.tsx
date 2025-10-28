@@ -161,7 +161,7 @@ export default function GenerateReceiptDialog({
       </DialogTrigger>
       <DialogContent className='sm:max-w-[550px] bg-gray-50 border-gray-200 px-2'>
         <DialogHeader>
-          <DialogTitle className='text-[#000080] text-xl'>
+          <DialogTitle className='text-primary text-xl'>
             Past Sale Receipt
           </DialogTitle>
         </DialogHeader>
@@ -181,7 +181,7 @@ export default function GenerateReceiptDialog({
                 size='sm'
                 onClick={handleSearch}
                 disabled={isLoading}
-                className='absolute right-1.5 top-1/2 -translate-y-1/2 h-7 px-2.5 bg-[#000080] hover:bg-[#000066] text-white'>
+                className='absolute right-1.5 top-1/2 -translate-y-1/2 h-7 px-2.5 bg-primary hover:bg-[#000066] text-white'>
                 {isLoading ? (
                   <Loader2 className='h-4 w-4 animate-spin' />
                 ) : (
@@ -257,7 +257,7 @@ export default function GenerateReceiptDialog({
               <Button
                 onClick={handleDownloadReceipt}
                 disabled={isDownloading}
-                className='gap-2 bg-[#000080] hover:bg-[#000066] text-white'>
+                className='gap-2 bg-primary hover:bg-[#000066] text-white'>
                 {isDownloading ? (
                   <>
                     <Loader2 className='h-4 w-4 animate-spin' />

@@ -52,7 +52,7 @@ export default function AgentMobileRow({
         <div className='font-medium'>{agent.name}</div>
         <a
           href={`tel:${agent.phone_number}`}
-          className='flex items-center gap-1 text-sm text-[#000080] mt-1'>
+          className='flex items-center gap-1 text-sm text-primary mt-1'>
           <Phone className='h-3 w-3' />
           {agent.phone_number}
         </a>
@@ -61,7 +61,7 @@ export default function AgentMobileRow({
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant='ghost' size='sm'>
-              <Info className='h-4 w-4 text-[#000080]' />
+              <Info className='h-4 w-4 text-primary' />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align='end' className='w-56'>

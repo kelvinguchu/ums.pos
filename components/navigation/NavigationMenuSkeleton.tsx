@@ -33,8 +33,8 @@ export function NavigationMenuSkeleton() {
                 className={cn(
                   "w-full px-2 py-2.5 text-sm font-medium transition-colors",
                   "pointer-events-none",
-                  "hover:bg-gray-50 hover:text-[#000080]",
-                  "focus:bg-gray-50 focus:text-[#000080] focus:outline-none"
+                  "hover:bg-gray-50 hover:text-primary",
+                  "focus:bg-gray-50 focus:text-primary focus:outline-none"
                 )}>
                 <div className='flex w-full items-center gap-3'>
                   <Skeleton className='h-4 w-4 rounded shrink-0' />
