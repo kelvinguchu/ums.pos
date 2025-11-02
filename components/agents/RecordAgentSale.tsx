@@ -49,6 +49,7 @@ interface RecordAgentSaleProps {
 
 interface MeterInventory {
   id: string;
+  meter_id: string | null;
   serial_number: string;
   type: string;
   assigned_at: Date | null;
@@ -151,8 +152,13 @@ export default function RecordAgentSale({
 
       // Use the new safe agent sale processing function
       const result = await processAgentMeterSale({
-        meters: selectedMeters,
-        currentUser,
+        agentId: agent.id,
+        meters: selectedMeters.map((meter) => ({
+          id: meter.id,
+          serial_number: meter.serial_number,
+          type: meter.type,
+        })),
+        currentUser: { id: currentUser.id },
         userName,
         saleDetails: {
           destination: agent.location,

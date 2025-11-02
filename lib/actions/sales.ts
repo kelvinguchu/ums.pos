@@ -23,8 +23,8 @@ import {
   userProfiles,
   faultyReturns,
   meters as metersTable,
+  agentInventory,
 } from "../db/schema";
-import { removeFromAgentInventory } from "./agents";
 
 async function checkUserActive(userId: string): Promise<boolean> {
   const [user] = await db
@@ -1266,11 +1266,13 @@ export async function processMeterSale({
  * This is specifically for sales from agent inventory
  */
 export async function processAgentMeterSale({
+  agentId,
   meters,
   currentUser,
   userName,
   saleDetails,
 }: {
+  agentId: string;
   meters: Array<{ id: string; serial_number: string; type: string }>;
   currentUser: { id: string };
   userName: string;
@@ -1313,138 +1315,229 @@ export async function processAgentMeterSale({
     );
   }
 
-  try {
-    const metersByType = meters.reduce(
-      (acc: { [key: string]: typeof meters }, meter) => {
-        if (!acc[meter.type]) acc[meter.type] = [];
-        acc[meter.type].push(meter);
-        return acc;
-      },
-      {}
-    );
+  return withActiveUserCheck(currentUser.id, async () => {
+    const notificationPayloads: Array<
+      Parameters<typeof createNotification>[0]
+    > = [];
 
-    // Calculate total amount
-    const totalAmount = Object.entries(metersByType).reduce(
-      (total, [type, typeMeters]) =>
-        total +
-        typeMeters.length *
-          Number.parseFloat(saleDetails.unitPrices[type] || "0"),
-      0
-    );
+    try {
+      const result = await db.transaction(async (tx) => {
+        const meterIds = meters.map((m) => m.id);
 
-    // Create sales transaction
-    const transactionData = await createSalesTransaction({
-      user_id: currentUser.id,
-      user_name: userName,
-      sale_date: saleDetails.saleDate,
-      destination: saleDetails.destination,
-      recipient: saleDetails.recipient,
-      customer_type: saleDetails.customerType,
-      customer_county: saleDetails.customerCounty,
-      customer_contact: saleDetails.customerContact,
-      total_amount: totalAmount,
-    });
+        const inventoryRows = await tx
+          .select({
+            id: agentInventory.id,
+            agent_id: agentInventory.agent_id,
+            meter_id: agentInventory.meter_id,
+            serial_number: agentInventory.serial_number,
+            type: agentInventory.type,
+          })
+          .from(agentInventory)
+          .where(inArray(agentInventory.id, meterIds));
 
-    // Process each meter type as a batch
-    const processedBatches: Array<{
-      batchId: string;
-      type: string;
-      count: number;
-    }> = [];
+        if (inventoryRows.length !== meters.length) {
+          const foundIds = new Set(inventoryRows.map((row) => row.id));
+          const missing = meterIds.filter((id) => !foundIds.has(id));
+          throw new Error(
+            `Some meters are no longer available in agent inventory. Missing IDs: ${missing.join(", ")}`
+          );
+        }
 
-    for (const [type, typeMeters] of Object.entries(metersByType)) {
-      const batchAmount = typeMeters.length;
-      const typeUnitPrice = Number.parseFloat(saleDetails.unitPrices[type]);
-      const totalPrice = typeUnitPrice * batchAmount;
+        const unauthorized = inventoryRows.find(
+          (row) => row.agent_id !== agentId
+        );
+        if (unauthorized) {
+          throw new Error(
+            "One or more meters no longer belong to the selected agent"
+          );
+        }
 
-      // Create sale batch with transaction_id
-      const batchData = await addSaleBatch({
-        user_id: currentUser.id,
-        user_name: userName,
-        meter_type: type,
-        batch_amount: batchAmount,
-        unit_price: typeUnitPrice,
-        total_price: totalPrice,
-        destination: saleDetails.destination,
-        recipient: saleDetails.recipient,
-        customer_type: saleDetails.customerType,
-        customer_county: saleDetails.customerCounty,
-        customer_contact: saleDetails.customerContact,
-        sale_date: saleDetails.saleDate,
-        transaction_id: transactionData.id,
-      });
+        const inventoryByType = inventoryRows.reduce(
+          (acc, row) => {
+            if (!acc[row.type]) {
+              acc[row.type] = [];
+            }
+            acc[row.type]!.push(row);
+            return acc;
+          },
+          {} as Record<string, Array<(typeof inventoryRows)[number]>>
+        );
 
-      if (!batchData?.id) {
-        throw new Error(`Failed to create batch for ${type} meters`);
-      }
+        const unitPriceByType = new Map<string, number>();
+        let totalAmount = 0;
 
-      // Process individual meters with proper error handling
-      // Process sequentially to ensure atomicity per meter
-      for (const meter of typeMeters) {
-        try {
-          // Step 1: Remove from agent inventory FIRST
-          await removeFromAgentInventory(meter.id);
+        for (const [type, rows] of Object.entries(inventoryByType)) {
+          const typeUnitPrice = Number.parseFloat(saleDetails.unitPrices[type]);
 
-          // Step 2: Only add to sold_meters if removal was successful
-          await addSoldMeter({
-            meter_id: meter.id,
+          if (!Number.isFinite(typeUnitPrice)) {
+            throw new Error(`Invalid unit price for meter type ${type}`);
+          }
+
+          unitPriceByType.set(type, typeUnitPrice);
+          totalAmount += rows.length * typeUnitPrice;
+        }
+
+        const transactionData = await createSalesTransaction(
+          {
+            user_id: currentUser.id,
+            user_name: userName,
+            sale_date: saleDetails.saleDate,
+            destination: saleDetails.destination,
+            recipient: saleDetails.recipient,
+            customer_type: saleDetails.customerType,
+            customer_county: saleDetails.customerCounty,
+            customer_contact: saleDetails.customerContact,
+            total_amount: totalAmount,
+          },
+          tx as unknown as DrizzleClient
+        );
+
+        const batchInputs = Object.entries(inventoryByType).map(
+          ([type, rows]) => {
+            const batchAmount = rows.length;
+            const typeUnitPrice = unitPriceByType.get(type);
+
+            if (typeUnitPrice === undefined) {
+              throw new Error(`Missing unit price for meter type ${type}`);
+            }
+            const totalPrice = typeUnitPrice * batchAmount;
+
+            return {
+              user_id: currentUser.id,
+              user_name: userName,
+              meter_type: type,
+              batch_amount: batchAmount,
+              unit_price: typeUnitPrice,
+              total_price: totalPrice,
+              destination: saleDetails.destination,
+              recipient: saleDetails.recipient,
+              customer_type: saleDetails.customerType,
+              customer_county: saleDetails.customerCounty,
+              customer_contact: saleDetails.customerContact,
+              sale_date: saleDetails.saleDate,
+              transaction_id: transactionData.id,
+            } satisfies Omit<SaleBatchData, "id">;
+          }
+        );
+
+        const batchInsertValues = batchInputs.map(
+          ({ unit_price, total_price, ...rest }) => ({
+            ...rest,
+            unit_price: unit_price.toString(),
+            total_price: total_price.toString(),
+          })
+        );
+
+        const insertedBatches = batchInsertValues.length
+          ? await tx.insert(saleBatches).values(batchInsertValues).returning()
+          : [];
+
+        for (let idx = 0; idx < insertedBatches.length; idx++) {
+          const batch = insertedBatches[idx];
+          const input = batchInputs[idx];
+          notificationPayloads.push({
+            type: "METER_SALE",
+            message: `${input.user_name} sold ${input.batch_amount} ${input.meter_type} meter${
+              input.batch_amount > 1 ? "s" : ""
+            } to ${input.recipient} in ${input.destination}`,
+            metadata: {
+              batchId: batch.id,
+              meterType: input.meter_type,
+              batchAmount: input.batch_amount,
+              destination: input.destination,
+              recipient: input.recipient,
+              totalPrice: input.total_price,
+              unitPrice: input.unit_price,
+              customerType: input.customer_type,
+              customerCounty: input.customer_county,
+              customerContact: input.customer_contact,
+            },
+            createdBy: input.user_id,
+          });
+        }
+
+        const batchIdByType = new Map<string, string>();
+        for (let idx = 0; idx < insertedBatches.length; idx++) {
+          const batch = insertedBatches[idx];
+          batchIdByType.set(batchInputs[idx].meter_type, batch.id);
+        }
+
+        const removedInventory = await tx
+          .delete(agentInventory)
+          .where(inArray(agentInventory.id, meterIds))
+          .returning({ id: agentInventory.id });
+
+        if (removedInventory.length !== meterIds.length) {
+          throw new Error(
+            `Failed to remove all meters from agent inventory. Expected ${meterIds.length}, removed ${removedInventory.length}.`
+          );
+        }
+
+        const soldMeterValues = inventoryRows.map((row) => {
+          const unitPrice = unitPriceByType.get(row.type);
+
+          if (unitPrice === undefined) {
+            throw new Error(`Missing unit price for meter type ${row.type}`);
+          }
+
+          const batchId = batchIdByType.get(row.type);
+
+          if (!batchId) {
+            throw new Error(`Batch mapping missing for meter type ${row.type}`);
+          }
+
+          return {
+            meter_id: row.meter_id,
             sold_by: currentUser.id,
             sold_at: saleDetails.saleDate,
             destination: saleDetails.destination,
             recipient: saleDetails.recipient,
-            serial_number: meter.serial_number,
-            unit_price: typeUnitPrice,
-            batch_id: batchData.id,
+            serial_number: row.serial_number.trim().toUpperCase(),
+            unit_price: unitPrice,
+            batch_id: batchId,
             customer_type: saleDetails.customerType,
             customer_county: saleDetails.customerCounty,
             customer_contact: saleDetails.customerContact,
-          });
-        } catch (error) {
-          // If either step fails, log and re-throw to stop the entire sale
-          console.error(
-            `CRITICAL ERROR processing meter ${meter.serial_number}:`,
-            error
+          } satisfies Omit<SoldMeterData, "id">;
+        });
+
+        if (soldMeterValues.length > 0) {
+          const soldInsertValues = soldMeterValues.map(
+            ({ unit_price, ...rest }) => ({
+              ...rest,
+              unit_price: unit_price.toString(),
+            })
           );
-          throw new Error(
-            `Failed to process meter ${meter.serial_number}: ${error instanceof Error ? error.message : "Unknown error"}. Sale aborted to prevent data corruption.`
-          );
+
+          await tx.insert(soldMeters).values(soldInsertValues);
         }
-      }
 
-      processedBatches.push({
-        batchId: batchData.id,
-        type,
-        count: batchAmount,
+        return {
+          success: true,
+          transactionId: transactionData.id,
+          referenceNumber: transactionData.reference_number,
+          batches: insertedBatches.map((batch, idx) => ({
+            batchId: batch.id,
+            type: batchInputs[idx]?.meter_type ?? "",
+            count: batchInputs[idx]?.batch_amount ?? 0,
+          })),
+        };
       });
-    }
 
-    // Final verification - ensure all meters were properly recorded
-    for (const batch of processedBatches) {
-      const recordedCount = await db
-        .select({ count: sql<number>`count(*)` })
-        .from(soldMeters)
-        .where(eq(soldMeters.batch_id, batch.batchId));
-
-      const actualCount = Number(recordedCount[0]?.count || 0);
-
-      if (actualCount !== batch.count) {
-        console.error(
-          `CRITICAL: Batch ${batch.batchId} has mismatch! Expected: ${batch.count}, Got: ${actualCount}`
-        );
-        throw new Error(
-          `Data integrity error: Expected ${batch.count} meters in batch but found ${actualCount}. Sale has been aborted.`
+      if (notificationPayloads.length > 0) {
+        await Promise.all(
+          notificationPayloads.map((payload) =>
+            createNotification(payload).catch((error) => {
+              console.error("Failed to create sale notification:", error);
+            })
+          )
         );
       }
-    }
 
-    return {
-      success: true,
-      transactionId: transactionData.id,
-      referenceNumber: transactionData.reference_number,
-      batches: processedBatches,
-    };
-  } catch (error) {
-    console.error("Error processing agent meter sale:", error);
-    throw error;
-  }
+      return result;
+    } catch (error) {
+      console.error("Error processing agent meter sale:", error);
+      throw error;
+    }
+  });
 }

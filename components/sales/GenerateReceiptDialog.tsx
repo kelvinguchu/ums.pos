@@ -29,7 +29,7 @@ interface GenerateReceiptDialogProps {
 
 export default function GenerateReceiptDialog({
   trigger,
-}: GenerateReceiptDialogProps) {
+}: Readonly<GenerateReceiptDialogProps>) {
   const [referenceNumber, setReferenceNumber] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
@@ -78,11 +78,7 @@ export default function GenerateReceiptDialog({
   };
 
   const handleDownloadReceipt = async () => {
-    if (
-      !receiptData ||
-      !receiptData.meters ||
-      receiptData.meters.length === 0
-    ) {
+    if (!receiptData?.meters?.length) {
       toast.error("No meter data available for receipt");
       return;
     }
@@ -229,7 +225,7 @@ export default function GenerateReceiptDialog({
                   {Object.entries(metersByType).map(([type, count]) => (
                     <p key={type}>
                       - {type}: {String(count)} unit
-                      {Number(count) !== 1 ? "s" : ""}
+                      {Number(count) === 1 ? "" : "s"}
                     </p>
                   ))}
                 </div>

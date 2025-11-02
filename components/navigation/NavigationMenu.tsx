@@ -13,12 +13,6 @@ import { cn } from "@/lib/utils";
 import { usePagePrefetch } from "@/hooks/use-page-prefetch";
 import { Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
 
 interface NavigationItem {
   title: string;
@@ -65,45 +59,41 @@ export function NavigationMenu({
       </SidebarGroupLabel>
       <SidebarGroupContent className='mt-2 space-y-1'>
         <SidebarMenu>
-          <TooltipProvider delayDuration={0}>
-            {items.map((item) => {
-              const isNavigating = clickedUrl === item.url && isPending;
-              const isActive = currentPath === item.url;
+          {items.map((item) => {
+            const isNavigating = clickedUrl === item.url && isPending;
+            const isActive = currentPath === item.url;
 
-              return (
-                <SidebarMenuItem key={item.title}>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <SidebarMenuButton
-                        isActive={isActive}
-                        className={cn(
-                          "w-full px-2 py-2.5 cursor-pointer text-sm font-medium transition-all duration-150",
-                          "hover:bg-gray-50 hover:text-primary",
-                          "focus:bg-gray-50 focus:text-primary focus:outline-none",
-                          isActive && "bg-primary text-white font-semibold shadow-sm border-l-4 border-primary",
-                          isNavigating &&
-                            "bg-primary/10 text-primary opacity-70 cursor-wait"
-                        )}
-                        onMouseEnter={() => prefetchPage(item.url)}
-                        onClick={() => handleNavigation(item.url)}>
-                        {isNavigating ? (
-                          <Loader2 className='h-4 w-4 animate-spin' />
-                        ) : (
-                          <item.icon className='h-4 w-4' />
-                        )}
-                        <span>{item.title}</span>
-                      </SidebarMenuButton>
-                    </TooltipTrigger>
-                    <TooltipContent
-                      side='right'
-                      className='flex items-center gap-4'>
-                      {item.title}
-                    </TooltipContent>
-                  </Tooltip>
-                </SidebarMenuItem>
-              );
-            })}
-          </TooltipProvider>
+            return (
+              <SidebarMenuItem key={item.title}>
+                <SidebarMenuButton
+                  isActive={isActive}
+                  tooltip={{
+                    children: item.title,
+                    hidden: false,
+                    side: "right",
+                    sideOffset: 8,
+                  }}
+                  className={cn(
+                    "w-full px-2 py-2.5 cursor-pointer text-sm font-medium transition-all duration-150",
+                    "hover:bg-gray-50 hover:text-primary",
+                    "focus:bg-gray-50 focus:text-primary focus:outline-none",
+                    isActive &&
+                      "bg-primary text-white font-semibold shadow-sm border-l-4 border-primary",
+                    isNavigating &&
+                      "bg-primary/10 text-primary opacity-70 cursor-wait"
+                  )}
+                  onMouseEnter={() => prefetchPage(item.url)}
+                  onClick={() => handleNavigation(item.url)}>
+                  {isNavigating ? (
+                    <Loader2 className='h-4 w-4 animate-spin' />
+                  ) : (
+                    <item.icon className='h-4 w-4' />
+                  )}
+                  <span>{item.title}</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            );
+          })}
         </SidebarMenu>
       </SidebarGroupContent>
     </SidebarGroup>

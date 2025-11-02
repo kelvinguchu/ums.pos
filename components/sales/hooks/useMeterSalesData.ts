@@ -19,8 +19,8 @@ export interface SaleBatch {
   note_by: string | null;
 }
 
-const CACHE_TIME = 1000 * 60 * 5; // 5 minutes - keep in cache
-const STALE_TIME = 1000 * 30; // 30 seconds - refetch after this time
+const CACHE_TIME = 1000 * 60 * 5;
+const STALE_TIME = 1000 * 30;
 
 export function useMeterSalesData(
   page: number = 1,
@@ -42,6 +42,7 @@ export function useMeterSalesData(
     },
     gcTime: CACHE_TIME,
     staleTime: STALE_TIME,
+    placeholderData: (previousData) => previousData,
   });
 
   return {
